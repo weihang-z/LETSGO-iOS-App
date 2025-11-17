@@ -1,13 +1,13 @@
 # Travel App – Product Overview
 
-## 🌍 Core Concept
+## Core Concept
 Our app helps travelers **capture, organize, and relive their journey memories** through a clean timeline-based interface, while also enabling them to **find compatible travel companions** through thoughtful social features.
 
 Users can document their trips, organize travel journals chronologically, and connect with others who share similar destinations and interests.
 
 ---
 
-## 🎯 Target Audience
+## Target Audience
 
 ### • College Students & Young Adults (18–35)
 People who love traveling but prefer **not to travel alone**, and want a simple way to connect with like-minded companions.
@@ -17,7 +17,7 @@ Travelers who want to keep a **personal archive** of their journeys and prefer m
 
 ---
 
-## ✨ Significance: Connecting Travelers, Collecting Memories
+##  Significance: Connecting Travelers, Collecting Memories
 
 ### **Social Context**
 - Gen Z and Millennials experience increasing **“social media fatigue.”** They travel more but want to preserve their experiences more meaningfully.
