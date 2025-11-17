@@ -11,12 +11,39 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
 
-
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
-        // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
-        // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
-        guard let _ = (scene as? UIWindowScene) else { return }
+        guard let windowScene = scene as? UIWindowScene else { return }
+
+        let window = UIWindow(windowScene: windowScene)
+
+        // Tab 3 – Travel Groups
+        let groupDataStore = GroupDataStore()
+        let listController = TravelGroupsListViewController(dataStore: groupDataStore)
+        let groupsNavigation = UINavigationController(rootViewController: listController)
+        groupsNavigation.navigationBar.prefersLargeTitles = true
+        groupsNavigation.tabBarItem = UITabBarItem(
+            title: "Groups",
+            image: UIImage(systemName: "person.3"),
+            tag: 0
+        )
+
+        // Tab 4 – My Profile
+        let profileDataStore = UserContentDataStore()
+        let profileController = ProfileOverviewViewController(dataStore: profileDataStore)
+        let profileNavigation = UINavigationController(rootViewController: profileController)
+        profileNavigation.navigationBar.prefersLargeTitles = true
+        profileNavigation.tabBarItem = UITabBarItem(
+            title: "My Profile",
+            image: UIImage(systemName: "person.crop.circle"),
+            tag: 1
+        )
+
+        let tabBarController = UITabBarController()
+        tabBarController.viewControllers = [groupsNavigation, profileNavigation]
+
+        window.rootViewController = tabBarController
+        window.makeKeyAndVisible()
+        self.window = window
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
