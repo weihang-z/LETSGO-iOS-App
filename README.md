@@ -1,4 +1,4 @@
-# Travel App – Product Overview
+# LETSGO – App Overview
 
 ## Core Concept
 Our app helps travelers **capture, organize, and relive their journey memories** through a clean timeline-based interface, while also enabling them to **find compatible travel companions** through thoughtful social features.
