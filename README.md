@@ -1,4 +1,4 @@
-# Travel App – Tab3-4Feature Overview
+# Travel App – Tap3-4 Feature Overview
 
 This branch using local mock data to simulate group travel, journals, and personal profile features. Below is the current feature explanation and the roadmap for upcoming improvements.
 
