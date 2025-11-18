@@ -36,10 +36,10 @@ class MainTabBarController: UITabBarController {
         )
         
         // Tab 3
-        let groupsVC = UIViewController()
-        groupsVC.view.backgroundColor = .white
-        groupsVC.title = "Travel Together"
+        let groupDataStore = GroupDataStore()
+        let groupsVC = TravelGroupsListViewController(dataStore: groupDataStore)
         let groupsNav = UINavigationController(rootViewController: groupsVC)
+        groupsNav.navigationBar.prefersLargeTitles = true
         groupsNav.tabBarItem = UITabBarItem(
             title: "Travel Together",
             image: UIImage(systemName: "figure.2"),
@@ -47,10 +47,10 @@ class MainTabBarController: UITabBarController {
         )
         
         // Tab 4
-        let profileVC = UIViewController()
-        profileVC.view.backgroundColor = .white
-        profileVC.title = "Profile"
+        let profileDataStore = UserContentDataStore()
+        let profileVC = ProfileOverviewViewController(dataStore: profileDataStore)
         let profileNav = UINavigationController(rootViewController: profileVC)
+        profileNav.navigationBar.prefersLargeTitles = true
         profileNav.tabBarItem = UITabBarItem(
             title: "Profile",
             image: UIImage(systemName: "person.circle"),
