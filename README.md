@@ -3,7 +3,7 @@
 This branch using local mock data to simulate group travel, journals, and personal profile features. Below is the current feature explanation and the roadmap for upcoming improvements.
 
 ---
-# **Stage II – New Features, Screens & Interaction Overview**
+# **Stage II – Tab 3-4 New Features, Screens & Interaction Overview**
 
 ---
 
