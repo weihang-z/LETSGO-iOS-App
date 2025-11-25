@@ -15,6 +15,7 @@ final class GroupCardCell: UITableViewCell {
     private let dateLabel = UILabel()
     private let spotsLabel = UILabel()
     private let budgetLabel = UILabel()
+    private let themeLabel = UILabel()
     private let organizerLabel = UILabel()
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -32,6 +33,7 @@ final class GroupCardCell: UITableViewCell {
         dateLabel.text = "📅 " + formatter.string(from: group.startDate)
         spotsLabel.text = "🚗 Spots left: \(group.spotsLeft)"
         budgetLabel.text = "💰 Budget: $\(group.budget)"
+        themeLabel.text = "🎯 \(group.theme) · \(group.city)"
         organizerLabel.text = "👤 Organizer: @\(group.organizer)"
     }
 
@@ -47,7 +49,7 @@ final class GroupCardCell: UITableViewCell {
         containerView.layer.shadowRadius = 8
         containerView.layer.shadowOffset = CGSize(width: 0, height: 4)
 
-        let labels = [destinationLabel, dateLabel, spotsLabel, budgetLabel, organizerLabel]
+        let labels = [destinationLabel, dateLabel, spotsLabel, budgetLabel, themeLabel, organizerLabel]
         labels.forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             $0.numberOfLines = 1
@@ -56,6 +58,7 @@ final class GroupCardCell: UITableViewCell {
         dateLabel.font = UIFont.preferredFont(forTextStyle: .subheadline)
         spotsLabel.font = UIFont.preferredFont(forTextStyle: .subheadline)
         budgetLabel.font = UIFont.preferredFont(forTextStyle: .subheadline)
+        themeLabel.font = UIFont.preferredFont(forTextStyle: .subheadline)
         organizerLabel.font = UIFont.preferredFont(forTextStyle: .footnote)
         organizerLabel.textColor = .secondaryLabel
 

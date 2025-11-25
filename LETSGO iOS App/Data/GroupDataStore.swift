@@ -41,4 +41,18 @@ final class GroupDataStore {
         groups[index] = target
         return target
     }
+
+    @discardableResult
+    func leaveGroup(id: UUID, memberName: String) -> Group? {
+        guard let index = groups.firstIndex(where: { $0.id == id }) else { return nil }
+        var target = groups[index]
+        guard target.organizer != memberName else { return target }
+        guard let removalIndex = target.members.firstIndex(where: { $0.name == memberName }) else {
+            return target
+        }
+        target.members.remove(at: removalIndex)
+        target.spotsLeft += 1
+        groups[index] = target
+        return target
+    }
 }

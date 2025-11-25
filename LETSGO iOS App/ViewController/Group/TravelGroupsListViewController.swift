@@ -10,14 +10,22 @@ import UIKit
 final class TravelGroupsListViewController: UIViewController {
     private let tableView = UITableView(frame: .zero, style: .plain)
     private let dataStore: GroupDataStore
+    private let userContentStore: UserContentDataStore
+    private var filterOptions = GroupFilterOptions()
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         return formatter
     }()
 
-    init(dataStore: GroupDataStore) {
+    private var currentGroups: [Group] {
+        if filterOptions.isEmpty { return dataStore.groups }
+        return dataStore.groups.filter { filterOptions.matches($0) }
+    }
+
+    init(dataStore: GroupDataStore, userContentStore: UserContentDataStore) {
         self.dataStore = dataStore
+        self.userContentStore = userContentStore
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -68,6 +76,12 @@ final class TravelGroupsListViewController: UIViewController {
     }
 
     private func configureNavigationItems() {
+        navigationItem.leftBarButtonItem = UIBarButtonItem(
+            title: "Filter",
+            style: .plain,
+            target: self,
+            action: #selector(filterTapped)
+        )
         navigationItem.rightBarButtonItem = UIBarButtonItem(
             title: "+ Create",
             style: .done,
@@ -80,6 +94,7 @@ final class TravelGroupsListViewController: UIViewController {
         let controller = CreateGroupViewController(mode: .create, group: nil, currentUser: dataStore.currentUser)
         controller.onSave = { [weak self] group in
             self?.dataStore.add(group)
+            self?.userContentStore.addJoinedGroup(group)
             self?.tableView.reloadData()
         }
         navigationController?.pushViewController(controller, animated: true)
@@ -90,20 +105,43 @@ final class TravelGroupsListViewController: UIViewController {
         detailController.onGroupChanged = { [weak self] _ in
             self?.tableView.reloadData()
         }
+        detailController.onMembershipChanged = { [weak self] updatedGroup, isMember in
+            guard let self else { return }
+            if isMember {
+                self.userContentStore.addJoinedGroup(updatedGroup)
+            } else {
+                self.userContentStore.removeJoinedGroup(with: updatedGroup.id)
+            }
+        }
         navigationController?.pushViewController(detailController, animated: true)
+    }
+
+    @objc private func filterTapped() {
+        let controller = GroupFilterViewController(options: filterOptions)
+        controller.onApply = { [weak self] options in
+            self?.filterOptions = options
+            self?.tableView.reloadData()
+        }
+        controller.onClear = { [weak self] in
+            self?.filterOptions.clear()
+            self?.tableView.reloadData()
+        }
+        let nav = UINavigationController(rootViewController: controller)
+        nav.modalPresentationStyle = .pageSheet
+        present(nav, animated: true)
     }
 }
 
 extension TravelGroupsListViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return dataStore.groups.count
+        return currentGroups.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: GroupCardCell.reuseIdentifier, for: indexPath) as? GroupCardCell else {
             return UITableViewCell()
         }
-        let group = dataStore.groups[indexPath.row]
+        let group = currentGroups[indexPath.row]
         cell.configure(with: group, formatter: dateFormatter)
         return cell
     }
@@ -111,7 +149,7 @@ extension TravelGroupsListViewController: UITableViewDataSource {
 
 extension TravelGroupsListViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let group = dataStore.groups[indexPath.row]
+        let group = currentGroups[indexPath.row]
         openDetail(for: group)
     }
 }

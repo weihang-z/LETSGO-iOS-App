@@ -17,6 +17,8 @@ final class CreateGroupViewController: UIViewController {
     private let scrollView = UIScrollView()
     private let stackView = UIStackView()
     private let destinationField = UITextField()
+    private let cityField = UITextField()
+    private let themeField = UITextField()
     private let budgetField = UITextField()
     private let spotsField = UITextField()
     private let descriptionView = UITextView()
@@ -47,11 +49,17 @@ final class CreateGroupViewController: UIViewController {
         stackView.spacing = 16
         stackView.translatesAutoresizingMaskIntoConstraints = false
 
+        datePicker.preferredDatePickerStyle = .compact
+        datePicker.datePickerMode = .date
+
         destinationField.placeholder = "Destination"
         configureTextField(destinationField)
 
-        datePicker.preferredDatePickerStyle = .compact
-        datePicker.datePickerMode = .date
+        cityField.placeholder = "City"
+        configureTextField(cityField)
+
+        themeField.placeholder = "Theme (e.g. Foodie, Nature)"
+        configureTextField(themeField)
 
         budgetField.placeholder = "Budget (USD)"
         budgetField.keyboardType = .numberPad
@@ -101,6 +109,8 @@ final class CreateGroupViewController: UIViewController {
         ])
 
         [destinationField,
+         cityField,
+         themeField,
          dateRow,
          budgetField,
          spotsField,
@@ -120,6 +130,8 @@ final class CreateGroupViewController: UIViewController {
             return
         }
         destinationField.text = group.destination
+        cityField.text = group.city
+        themeField.text = group.theme
         budgetField.text = "\(group.budget)"
         spotsField.text = "\(group.spotsLeft)"
         descriptionView.text = group.description
@@ -131,6 +143,11 @@ final class CreateGroupViewController: UIViewController {
             showAlert(message: "Destination is required.")
             return
         }
+        let trimmedCity = cityField.text?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cityText = (trimmedCity?.isEmpty == false ? trimmedCity : destination) ?? destination
+
+        let trimmedTheme = themeField.text?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let themeText = (trimmedTheme?.isEmpty == false ? trimmedTheme : "General") ?? "General"
         let budget = Int(budgetField.text ?? "") ?? 0
         let spots = Int(spotsField.text ?? "") ?? 0
         let descriptionText = descriptionView.text ?? ""
@@ -138,19 +155,36 @@ final class CreateGroupViewController: UIViewController {
         let groupToSave: Group
         if var existing = group {
             existing.destination = destination
+            existing.city = cityText
+            existing.theme = themeText
             existing.startDate = datePicker.date
             existing.budget = budget
             existing.spotsLeft = spots
             existing.description = descriptionText
+            existing.organizerProfile = OrganizerProfile(
+                username: existing.organizerProfile.username,
+                tagline: existing.organizerProfile.tagline,
+                homeCity: cityText,
+                avatarSystemName: existing.organizerProfile.avatarSystemName
+            )
             groupToSave = existing
         } else {
+            let organizerProfile = OrganizerProfile(
+                username: currentUser,
+                tagline: "Trip host",
+                homeCity: cityText,
+                avatarSystemName: "person.crop.circle.fill"
+            )
             groupToSave = Group(
                 id: UUID(),
                 destination: destination,
+                city: cityText,
+                theme: themeText,
                 startDate: datePicker.date,
                 budget: budget,
                 spotsLeft: spots,
                 organizer: currentUser,
+                organizerProfile: organizerProfile,
                 description: descriptionText,
                 members: [GroupMember(name: currentUser, accentColor: .systemBlue)]
             )

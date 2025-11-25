@@ -7,13 +7,16 @@
 import UIKit
 
 final class MyPostsViewController: UIViewController {
-    private let groups: [UserGroupSummary]
-    private let journals: [JournalEntry]
-    private var selectedSegment: Segment = .groups {
+    private let dataStore: UserContentDataStore
+    private var joinedGroups: [Group] {
+        dataStore.joinedGroups
+    }
+    private var logs: [JournalEntry] { [] }
+    private var selectedSegment: Segment = .joinedGroups {
         didSet { tableView.reloadData() }
     }
 
-    private let segmentedControl = UISegmentedControl(items: ["Groups", "Journals"])
+    private let segmentedControl = UISegmentedControl(items: ["Joined Groups", "My Logs"])
     private let tableView = UITableView(frame: .zero, style: .grouped)
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -21,9 +24,8 @@ final class MyPostsViewController: UIViewController {
         return formatter
     }()
 
-    init(groups: [UserGroupSummary], journals: [JournalEntry]) {
-        self.groups = groups
-        self.journals = journals
+    init(dataStore: UserContentDataStore) {
+        self.dataStore = dataStore
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -33,11 +35,16 @@ final class MyPostsViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "My Posts"
+        title = "My Groups & Logs"
         view.backgroundColor = .systemBackground
         configureSegmentedControl()
         configureTableView()
         layoutContent()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        tableView.reloadData()
     }
 
     private func configureSegmentedControl() {
@@ -70,24 +77,24 @@ final class MyPostsViewController: UIViewController {
     }
 
     @objc private func segmentChanged() {
-        selectedSegment = Segment(rawValue: segmentedControl.selectedSegmentIndex) ?? .groups
+        selectedSegment = Segment(rawValue: segmentedControl.selectedSegmentIndex) ?? .joinedGroups
     }
 }
 
 extension MyPostsViewController {
     private enum Segment: Int {
-        case groups
-        case journals
+        case joinedGroups
+        case logs
     }
 }
 
 extension MyPostsViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch selectedSegment {
-        case .groups:
-            return groups.count
-        case .journals:
-            return journals.count
+        case .joinedGroups:
+            return joinedGroups.count
+        case .logs:
+            return 0
         }
     }
 
@@ -96,55 +103,42 @@ extension MyPostsViewController: UITableViewDataSource {
         cell.selectionStyle = .none
 
         switch selectedSegment {
-        case .groups:
-            let item = groups[indexPath.row]
-            cell.textLabel?.text = item.destination
-            cell.detailTextLabel?.text = nil
-            cell.contentConfiguration = groupConfiguration(for: item)
-        case .journals:
-            let item = journals[indexPath.row]
-            cell.textLabel?.text = item.title
-            cell.detailTextLabel?.text = nil
-            cell.contentConfiguration = journalConfiguration(for: item)
+        case .joinedGroups:
+            let group = joinedGroups[indexPath.row]
+            cell.contentConfiguration = joinedGroupConfiguration(for: group)
+        case .logs:
+            break
         }
         return cell
     }
 
-    private func groupConfiguration(for group: UserGroupSummary) -> UIListContentConfiguration {
+    private func joinedGroupConfiguration(for group: Group) -> UIListContentConfiguration {
         var config = UIListContentConfiguration.subtitleCell()
         config.text = group.destination
-        let details = "\(dateFormatter.string(from: group.departureDate))  ·  \(group.peopleCount) people  ·  $\(group.budget)"
+        let details = "\(dateFormatter.string(from: group.startDate))  ·  \(group.city)  ·  $\(group.budget)"
         config.secondaryText = details
-        config.image = UIImage(systemName: "person.3.fill")
-        config.imageProperties.tintColor = .systemBlue
+        config.image = UIImage(systemName: "figure.2.and.child.holdinghands")
+        config.imageProperties.tintColor = .systemGreen
         return config
     }
 
-    private func journalConfiguration(for journal: JournalEntry) -> UIListContentConfiguration {
-        var config = UIListContentConfiguration.subtitleCell()
-        config.text = journal.title
-        config.secondaryText = dateFormatter.string(from: journal.date)
-        config.image = journal.coverImage ?? UIImage(systemName: "book")
-        config.imageProperties.tintColor = .systemPink
-        return config
-    }
 }
 
 extension MyPostsViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let message: String
+        tableView.deselectRow(at: indexPath, animated: true)
         switch selectedSegment {
-        case .groups:
-            let group = groups[indexPath.row]
-            message = "Open group detail for \(group.destination)."
-        case .journals:
-            let journal = journals[indexPath.row]
-            message = "Open journal detail for \(journal.title)."
+        case .joinedGroups:
+            let group = joinedGroups[indexPath.row]
+            let controller = JoinedGroupDetailViewController(group: group)
+            controller.onLeave = { [weak self] removedGroup in
+                self?.dataStore.removeJoinedGroup(with: removedGroup.id)
+                self?.tableView.reloadData()
+            }
+            navigationController?.pushViewController(controller, animated: true)
+        case .logs:
+            break
         }
-
-        let alert = UIAlertController(title: "Coming Soon", message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alert, animated: true)
     }
 }
 

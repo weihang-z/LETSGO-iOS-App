@@ -10,11 +10,16 @@ import UIKit
 final class ProfileOverviewViewController: UIViewController {
     private let dataStore: UserContentDataStore
 
+    private let scrollView = UIScrollView()
+    private let contentStackView = UIStackView()
     private let avatarImageView = UIImageView()
+    private let uploadAvatarButton = UIButton(type: .system)
     private let usernameLabel = UILabel()
     private let bioLabel = UILabel()
     private let statsStackView = UIStackView()
     private let buttonStackView = UIStackView()
+    private let socialButtonStackView = UIStackView()
+    private let travelMapButton = UIButton(type: .system)
 
     init(dataStore: UserContentDataStore) {
         self.dataStore = dataStore
@@ -29,6 +34,7 @@ final class ProfileOverviewViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
         title = "My Profile"
+        configureScrollView()
         configureAvatar()
         configureLabels()
         configureStats()
@@ -37,12 +43,48 @@ final class ProfileOverviewViewController: UIViewController {
         refreshUI()
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        refreshUI()
+    }
+
+    private func configureScrollView() {
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.alwaysBounceVertical = true
+        contentStackView.axis = .vertical
+        contentStackView.spacing = 16
+        contentStackView.translatesAutoresizingMaskIntoConstraints = false
+        contentStackView.isLayoutMarginsRelativeArrangement = true
+        contentStackView.layoutMargins = UIEdgeInsets(top: 32, left: 24, bottom: 32, right: 24)
+
+        view.addSubview(scrollView)
+        scrollView.addSubview(contentStackView)
+
+        NSLayoutConstraint.activate([
+            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            contentStackView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
+            contentStackView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
+            contentStackView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
+            contentStackView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
+            contentStackView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor)
+        ])
+    }
+
     private func configureAvatar() {
         avatarImageView.translatesAutoresizingMaskIntoConstraints = false
         avatarImageView.contentMode = .scaleAspectFill
         avatarImageView.clipsToBounds = true
         avatarImageView.tintColor = .systemBlue
         avatarImageView.backgroundColor = UIColor.systemBlue.withAlphaComponent(0.1)
+
+        uploadAvatarButton.setTitle("Upload photo", for: .normal)
+        uploadAvatarButton.setTitleColor(.systemBlue, for: .normal)
+        uploadAvatarButton.titleLabel?.font = UIFont.preferredFont(forTextStyle: .subheadline)
+        uploadAvatarButton.addTarget(self, action: #selector(uploadPhotoTapped), for: .touchUpInside)
     }
 
     private func configureLabels() {
@@ -72,37 +114,59 @@ final class ProfileOverviewViewController: UIViewController {
         buttonStackView.translatesAutoresizingMaskIntoConstraints = false
 
         let editButton = makePrimaryButton(title: "Edit Profile", action: #selector(editProfileTapped))
-        let postsButton = makeSecondaryButton(title: "My Posts", action: #selector(myPostsTapped))
+        let postsButton = makeSecondaryButton(title: "My Groups & Logs", action: #selector(myPostsTapped))
         buttonStackView.addArrangedSubview(editButton)
         buttonStackView.addArrangedSubview(postsButton)
+
+        socialButtonStackView.axis = .horizontal
+        socialButtonStackView.distribution = .fillEqually
+        socialButtonStackView.spacing = 12
+        socialButtonStackView.translatesAutoresizingMaskIntoConstraints = false
+        let followersButton = makeSecondaryButton(title: "Followers", action: #selector(followersTapped))
+        let followingButton = makeSecondaryButton(title: "Following", action: #selector(followingTapped))
+        socialButtonStackView.addArrangedSubview(followersButton)
+        socialButtonStackView.addArrangedSubview(followingButton)
+
+        configureTravelMapButton()
+    }
+
+    private func configureTravelMapButton() {
+        travelMapButton.setTitle("Travel Footprint Map", for: .normal)
+        travelMapButton.backgroundColor = UIColor.systemTeal.withAlphaComponent(0.2)
+        travelMapButton.setTitleColor(.systemTeal, for: .normal)
+        travelMapButton.layer.cornerRadius = 14
+        travelMapButton.titleLabel?.font = UIFont.preferredFont(forTextStyle: .headline)
+        travelMapButton.translatesAutoresizingMaskIntoConstraints = false
+        travelMapButton.heightAnchor.constraint(equalToConstant: 50).isActive = true
+        travelMapButton.addTarget(self, action: #selector(travelMapTapped), for: .touchUpInside)
     }
 
     private func layoutContent() {
         let avatarContainer = UIView()
         avatarContainer.translatesAutoresizingMaskIntoConstraints = false
-        avatarContainer.addSubview(avatarImageView)
+        let avatarStack = UIStackView(arrangedSubviews: [avatarImageView, uploadAvatarButton])
+        avatarStack.axis = .vertical
+        avatarStack.alignment = .center
+        avatarStack.spacing = 8
+        avatarStack.translatesAutoresizingMaskIntoConstraints = false
+        avatarContainer.addSubview(avatarStack)
         NSLayoutConstraint.activate([
-            avatarImageView.centerXAnchor.constraint(equalTo: avatarContainer.centerXAnchor),
-            avatarImageView.topAnchor.constraint(equalTo: avatarContainer.topAnchor),
-            avatarImageView.bottomAnchor.constraint(equalTo: avatarContainer.bottomAnchor)
+            avatarStack.centerXAnchor.constraint(equalTo: avatarContainer.centerXAnchor),
+            avatarStack.topAnchor.constraint(equalTo: avatarContainer.topAnchor),
+            avatarStack.bottomAnchor.constraint(equalTo: avatarContainer.bottomAnchor)
         ])
 
-        let container = UIStackView(arrangedSubviews: [avatarContainer, usernameLabel, bioLabel, statsStackView, buttonStackView])
-        container.axis = .vertical
-        container.spacing = 16
-        container.alignment = .fill
-        container.translatesAutoresizingMaskIntoConstraints = false
-
-        view.addSubview(container)
-        NSLayoutConstraint.activate([
-            avatarImageView.heightAnchor.constraint(equalToConstant: 120),
-            avatarImageView.widthAnchor.constraint(equalTo: avatarImageView.heightAnchor),
-            container.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 32),
-            container.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
-            container.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24)
-        ])
-
+        avatarImageView.heightAnchor.constraint(equalToConstant: 120).isActive = true
+        avatarImageView.widthAnchor.constraint(equalTo: avatarImageView.heightAnchor).isActive = true
         avatarImageView.layer.cornerRadius = 60
+
+        contentStackView.addArrangedSubview(avatarContainer)
+        contentStackView.addArrangedSubview(usernameLabel)
+        contentStackView.addArrangedSubview(bioLabel)
+        contentStackView.addArrangedSubview(statsStackView)
+        contentStackView.addArrangedSubview(buttonStackView)
+        contentStackView.addArrangedSubview(socialButtonStackView)
+        contentStackView.addArrangedSubview(travelMapButton)
     }
 
     private func refreshUI() {
@@ -135,7 +199,33 @@ final class ProfileOverviewViewController: UIViewController {
     }
 
     @objc private func myPostsTapped() {
-        let controller = MyPostsViewController(groups: dataStore.userGroups, journals: dataStore.userJournals)
+        let controller = MyPostsViewController(dataStore: dataStore)
+        navigationController?.pushViewController(controller, animated: true)
+    }
+
+    @objc private func uploadPhotoTapped() {
+        let controller = AvatarUploadViewController(currentImage: dataStore.profile.avatarImage)
+        controller.onSave = { [weak self] image in
+            guard var profile = self?.dataStore.profile else { return }
+            profile.avatarImage = image
+            self?.dataStore.updateProfile(profile)
+            self?.refreshUI()
+        }
+        navigationController?.pushViewController(controller, animated: true)
+    }
+
+    @objc private func followersTapped() {
+        let controller = FollowersListViewController(title: "Followers", users: dataStore.followers)
+        navigationController?.pushViewController(controller, animated: true)
+    }
+
+    @objc private func followingTapped() {
+        let controller = FollowersListViewController(title: "Following", users: dataStore.following)
+        navigationController?.pushViewController(controller, animated: true)
+    }
+
+    @objc private func travelMapTapped() {
+        let controller = TravelFootprintMapViewController(dataStore: dataStore)
         navigationController?.pushViewController(controller, animated: true)
     }
 

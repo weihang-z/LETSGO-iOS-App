@@ -9,6 +9,7 @@ import UIKit
 
 final class GroupDetailViewController: UIViewController {
     var onGroupChanged: ((Group) -> Void)?
+    var onMembershipChanged: ((Group, Bool) -> Void)?
 
     private let groupID: UUID
     private let dataStore: GroupDataStore
@@ -25,6 +26,14 @@ final class GroupDetailViewController: UIViewController {
         formatter.dateStyle = .medium
         return formatter
     }()
+
+    private var isCurrentUserOrganizer: Bool {
+        return group.organizer == dataStore.currentUser
+    }
+
+    private var isCurrentUserMember: Bool {
+        return group.members.contains(where: { $0.name == dataStore.currentUser })
+    }
 
     init(groupID: UUID, dataStore: GroupDataStore) {
         self.groupID = groupID
@@ -128,10 +137,14 @@ final class GroupDetailViewController: UIViewController {
         date.tag = 102
         let budget = makeInfoRow(title: "Budget", value: "$\(group.budget)")
         budget.tag = 103
+        let city = makeInfoRow(title: "City", value: group.city)
+        city.tag = 104
+        let theme = makeInfoRow(title: "Theme", value: group.theme)
+        theme.tag = 105
         let spots = makeInfoRow(title: "Spots left", value: "\(group.spotsLeft)")
-        spots.tag = 104
+        spots.tag = 106
 
-        [destination, date, budget, spots].forEach { stack.addArrangedSubview($0) }
+        [destination, date, budget, city, theme, spots].forEach { stack.addArrangedSubview($0) }
         card.addSubview(stack)
         NSLayoutConstraint.activate([
             stack.topAnchor.constraint(equalTo: card.topAnchor, constant: 20),
@@ -199,31 +212,54 @@ final class GroupDetailViewController: UIViewController {
 
     private func renderMembers() {
         membersStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        for member in group.members {
+        let sortedMembers = group.members.sorted { $0.name < $1.name }
+        for member in sortedMembers {
             let bubble = UIView()
             bubble.backgroundColor = member.accentColor.withAlphaComponent(0.15)
             bubble.layer.cornerRadius = 12
 
-            let label = UILabel()
-            label.text = member.name
-            label.font = UIFont.preferredFont(forTextStyle: .subheadline)
-            label.translatesAutoresizingMaskIntoConstraints = false
+            let nameLabel = UILabel()
+            nameLabel.text = "@\(member.name)"
+            nameLabel.font = UIFont.preferredFont(forTextStyle: .subheadline)
 
-            bubble.addSubview(label)
-            label.leadingAnchor.constraint(equalTo: bubble.leadingAnchor, constant: 12).isActive = true
-            label.trailingAnchor.constraint(equalTo: bubble.trailingAnchor, constant: -12).isActive = true
-            label.topAnchor.constraint(equalTo: bubble.topAnchor, constant: 8).isActive = true
-            label.bottomAnchor.constraint(equalTo: bubble.bottomAnchor, constant: -8).isActive = true
+            let roleLabel = UILabel()
+            roleLabel.font = UIFont.preferredFont(forTextStyle: .footnote)
+            roleLabel.textColor = .secondaryLabel
+            roleLabel.text = member.name == group.organizer ? "Organizer" : "Member"
+
+            let stack = UIStackView(arrangedSubviews: [nameLabel, roleLabel])
+            stack.axis = .vertical
+            stack.spacing = 2
+            stack.translatesAutoresizingMaskIntoConstraints = false
+
+            bubble.addSubview(stack)
+            NSLayoutConstraint.activate([
+                stack.leadingAnchor.constraint(equalTo: bubble.leadingAnchor, constant: 12),
+                stack.trailingAnchor.constraint(equalTo: bubble.trailingAnchor, constant: -12),
+                stack.topAnchor.constraint(equalTo: bubble.topAnchor, constant: 8),
+                stack.bottomAnchor.constraint(equalTo: bubble.bottomAnchor, constant: -8)
+            ])
 
             membersStack.addArrangedSubview(bubble)
+        }
+        if membersStack.arrangedSubviews.isEmpty {
+            let emptyLabel = UILabel()
+            emptyLabel.text = "No members yet. Be the first to join!"
+            emptyLabel.textColor = .secondaryLabel
+            emptyLabel.textAlignment = .center
+            membersStack.addArrangedSubview(emptyLabel)
         }
     }
 
     private func updateActionButton() {
-        let isOrganizer = group.organizer == dataStore.currentUser
-        if isOrganizer {
+        if isCurrentUserOrganizer {
             actionButton.setTitle("Edit Group", for: .normal)
             actionButton.backgroundColor = .systemOrange
+            actionButton.isEnabled = true
+        } else if isCurrentUserMember {
+            actionButton.setTitle("Leave Group", for: .normal)
+            actionButton.backgroundColor = .systemRed
+            actionButton.isEnabled = true
         } else {
             actionButton.setTitle(group.spotsLeft > 0 ? "Join Group" : "Group Full", for: .normal)
             actionButton.backgroundColor = group.spotsLeft > 0 ? .systemBlue : .systemGray3
@@ -232,13 +268,15 @@ final class GroupDetailViewController: UIViewController {
     }
 
     @objc private func primaryButtonTapped() {
-        let isOrganizer = group.organizer == dataStore.currentUser
-        if isOrganizer {
+        if isCurrentUserOrganizer {
             let controller = CreateGroupViewController(mode: .edit, group: group, currentUser: dataStore.currentUser)
             controller.onSave = { [weak self] updatedGroup in
                 self?.handleGroupUpdate(updatedGroup)
             }
             navigationController?.pushViewController(controller, animated: true)
+        } else if isCurrentUserMember {
+            guard let updated = dataStore.leaveGroup(id: group.id, memberName: dataStore.currentUser) else { return }
+            handleGroupUpdate(updated)
         } else {
             guard let updated = dataStore.joinGroup(id: group.id, memberName: dataStore.currentUser) else { return }
             handleGroupUpdate(updated)
@@ -250,5 +288,7 @@ final class GroupDetailViewController: UIViewController {
         group = updatedGroup
         onGroupChanged?(updatedGroup)
         renderContent()
+        let isMember = updatedGroup.members.contains { $0.name == dataStore.currentUser }
+        onMembershipChanged?(updatedGroup, isMember)
     }
 }
