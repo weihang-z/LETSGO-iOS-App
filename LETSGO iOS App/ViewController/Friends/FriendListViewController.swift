@@ -15,37 +15,85 @@ class FriendListViewController: UIViewController {
         return table
     }()
     
+    private let addFriendButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("Add Friend", for: .normal)
+        button.titleLabel?.font = UIFont.systemFont(ofSize: 18, weight: .semibold)
+        button.backgroundColor = .systemBlue
+        button.setTitleColor(.white, for: .normal)
+        button.layer.cornerRadius = 10
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+    
+    private let emptyStateLabel: UILabel = {
+        let label = UILabel()
+        label.text = "No friends yet!\nTap 'Add Friend' to get started"
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        label.textColor = .systemGray
+        label.font = UIFont.systemFont(ofSize: 16)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         
         setupUI()
         setupConstraints()
+        updateEmptyState()
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         tableView.reloadData()
+        updateEmptyState()
     }
     
     // MARK: - Setup
     private func setupUI() {
-        title = "Friend List"
+        title = "Friends"
         view.backgroundColor = .systemBackground
         
+        view.addSubview(addFriendButton)
         view.addSubview(tableView)
+        view.addSubview(emptyStateLabel)
         
         tableView.delegate = self
         tableView.dataSource = self
+        
+        addFriendButton.addTarget(self, action: #selector(addFriendButtonTapped), for: .touchUpInside)
     }
     
     private func setupConstraints() {
         NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            addFriendButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
+            addFriendButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            addFriendButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            addFriendButton.heightAnchor.constraint(equalToConstant: 50),
+            
+            tableView.topAnchor.constraint(equalTo: addFriendButton.bottomAnchor, constant: 20),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+            tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            
+            emptyStateLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            emptyStateLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            emptyStateLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
+            emptyStateLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40)
         ])
+    }
+    
+    private func updateEmptyState() {
+        emptyStateLabel.isHidden = !DataManager.shared.friends.isEmpty
+    }
+    
+    // MARK: - Actions
+    @objc private func addFriendButtonTapped() {
+        let addFriendVC = AddFriendViewController()
+        navigationController?.pushViewController(addFriendVC, animated: true)
     }
 }
 
@@ -76,6 +124,9 @@ extension FriendListViewController: UITableViewDelegate, UITableViewDataSource {
         let friend = DataManager.shared.friends[indexPath.row]
         let detailVC = FriendDetailViewController()
         detailVC.friend = friend
+        detailVC.onNicknameUpdated = { [weak self] in
+            self?.tableView.reloadData()
+        }
         navigationController?.pushViewController(detailVC, animated: true)
     }
 }
@@ -137,8 +188,16 @@ class FriendCell: UITableViewCell {
     }
     
     func configure(with friend: Friend) {
-        usernameLabel.text = friend.username
-        regionLabel.text = friend.region
-        noteLabel.text = friend.note
+        // Show nickname if it exists, otherwise show username
+        usernameLabel.text = friend.nickname ?? friend.username
+        
+        // Show actual username in gray if nickname exists
+        if let nickname = friend.nickname, !nickname.isEmpty {
+            regionLabel.text = "@\(friend.username) • \(friend.region)"
+        } else {
+            regionLabel.text = friend.region
+        }
+        
+        noteLabel.text = friend.note.isEmpty ? "No notes" : friend.note
     }
 }

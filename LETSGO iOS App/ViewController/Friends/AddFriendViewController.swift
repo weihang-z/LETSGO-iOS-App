@@ -39,6 +39,23 @@ class AddFriendViewController: UIViewController {
         return textField
     }()
     
+    private let phoneLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Phone Number"
+        label.font = UIFont.systemFont(ofSize: 16, weight: .medium)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
+    private let phoneTextField: UITextField = {
+        let textField = UITextField()
+        textField.placeholder = "Enter phone number"
+        textField.borderStyle = .roundedRect
+        textField.keyboardType = .phonePad
+        textField.translatesAutoresizingMaskIntoConstraints = false
+        return textField
+    }()
+    
     private let noteLabel: UILabel = {
         let label = UILabel()
         label.text = "Note"
@@ -83,6 +100,8 @@ class AddFriendViewController: UIViewController {
         view.addSubview(usernameTextField)
         view.addSubview(regionLabel)
         view.addSubview(regionTextField)
+        view.addSubview(phoneLabel)
+        view.addSubview(phoneTextField)
         view.addSubview(noteLabel)
         view.addSubview(noteTextField)
         view.addSubview(saveButton)
@@ -113,7 +132,16 @@ class AddFriendViewController: UIViewController {
             regionTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             regionTextField.heightAnchor.constraint(equalToConstant: 44),
             
-            noteLabel.topAnchor.constraint(equalTo: regionTextField.bottomAnchor, constant: 20),
+            phoneLabel.topAnchor.constraint(equalTo: regionTextField.bottomAnchor, constant: 20),
+            phoneLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            phoneLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            
+            phoneTextField.topAnchor.constraint(equalTo: phoneLabel.bottomAnchor, constant: 10),
+            phoneTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            phoneTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            phoneTextField.heightAnchor.constraint(equalToConstant: 44),
+            
+            noteLabel.topAnchor.constraint(equalTo: phoneTextField.bottomAnchor, constant: 20),
             noteLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             noteLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             
@@ -145,15 +173,15 @@ class AddFriendViewController: UIViewController {
             return
         }
         
+        let phoneNumber = phoneTextField.text ?? ""
         let note = noteTextField.text ?? ""
         
-        let newFriend = Friend(username: username, region: region, note: note)
+        let newFriend = Friend(username: username, region: region, note: note, phoneNumber: phoneNumber, nickname: nil)
         DataManager.shared.addFriend(newFriend)
         
         let alert = UIAlertController(title: "Success", message: "Friend added successfully!", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak self] _ in
-            let friendListVC = FriendListViewController()
-            self?.navigationController?.pushViewController(friendListVC, animated: true)
+            self?.navigationController?.popViewController(animated: true)
         })
         present(alert, animated: true)
     }

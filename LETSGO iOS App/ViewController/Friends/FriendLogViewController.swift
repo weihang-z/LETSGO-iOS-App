@@ -44,6 +44,14 @@ class FriendLogViewController: UIViewController {
         title = "Friend's Log"
         view.backgroundColor = .systemBackground
         
+        // Add navigation button to see all friends
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            title: "My Friends",
+            style: .plain,
+            target: self,
+            action: #selector(showFriendList)
+        )
+        
         view.addSubview(addFriendButton)
         view.addSubview(tableView)
         
@@ -72,6 +80,11 @@ class FriendLogViewController: UIViewController {
         let addFriendVC = AddFriendViewController()
         navigationController?.pushViewController(addFriendVC, animated: true)
     }
+    
+    @objc private func showFriendList() {
+        let friendListVC = FriendListViewController()
+        navigationController?.pushViewController(friendListVC, animated: true)
+    }
 }
 
 // MARK: - UITableViewDelegate & DataSource
@@ -99,9 +112,22 @@ extension FriendLogViewController: UITableViewDelegate, UITableViewDataSource {
         tableView.deselectRow(at: indexPath, animated: true)
         
         let log = DataManager.shared.friendLogs[indexPath.row]
-        let detailVC = FriendDetailViewController()
-        detailVC.friendLog = log
-        navigationController?.pushViewController(detailVC, animated: true)
+        
+        // Check if this person is in our friends list
+        if let friend = DataManager.shared.friends.first(where: { $0.username == log.name }) {
+            // Show friend profile (with edit nickname button and phone number)
+            let detailVC = FriendDetailViewController()
+            detailVC.friend = friend
+            detailVC.onNicknameUpdated = { [weak self] in
+                self?.tableView.reloadData()
+            }
+            navigationController?.pushViewController(detailVC, animated: true)
+        } else {
+            // Show log details only
+            let detailVC = FriendDetailViewController()
+            detailVC.friendLog = log
+            navigationController?.pushViewController(detailVC, animated: true)
+        }
     }
 }
 

@@ -39,7 +39,7 @@ final class EditProfileViewController: UIViewController {
     private func configureNavigationItems() {
         navigationItem.rightBarButtonItem = UIBarButtonItem(
             title: "Save",
-            style: .done,
+            style: .prominent,
             target: self,
             action: #selector(saveTapped)
         )

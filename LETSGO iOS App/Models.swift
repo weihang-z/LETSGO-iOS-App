@@ -16,4 +16,6 @@ struct Friend {
     let username: String
     let region: String
     let note: String
+    let phoneNumber: String
+    var nickname: String?
 }
