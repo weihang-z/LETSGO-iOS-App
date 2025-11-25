@@ -50,7 +50,7 @@ class LogCardCell: UITableViewCell {
         
         locationLabel = UILabel()
         locationLabel.font = .systemFont(ofSize: 14, weight: .medium)
-        locationLabel.textColor = UIColor(red: 0.96, green: 0.62, blue: 0.04, alpha: 1.0)
+        locationLabel.textColor = .systemBlue
         locationLabel.translatesAutoresizingMaskIntoConstraints = false
         
         titleLabel = UILabel()

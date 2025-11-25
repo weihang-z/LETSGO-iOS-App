@@ -25,9 +25,7 @@ class MainTabBarController: UITabBarController {
         )
         
         // Tab 2
-        let friendsVC = UIViewController()
-        friendsVC.view.backgroundColor = .white
-        friendsVC.title = "Friends"
+        let friendsVC = FriendLogViewController()
         let friendsNav = UINavigationController(rootViewController: friendsVC)
         friendsNav.tabBarItem = UITabBarItem(
             title: "Friends",

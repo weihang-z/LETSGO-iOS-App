@@ -16,6 +16,7 @@ class LogTimelineView: UIView {
         // Drawing code
     }
     */
+    var titleLabel: UILabel!
     var searchButton: UIButton!
     var newLogButton: UIButton!
     var filterContainerView: UIView!
@@ -41,6 +42,12 @@ class LogTimelineView: UIView {
     
     private func setupView() {
         backgroundColor = UIColor(red: 0.98, green: 0.98, blue: 0.98, alpha: 1.0)
+        
+        titleLabel = UILabel()
+        titleLabel.text = "My Logs"
+        titleLabel.font = .systemFont(ofSize: 24, weight: .bold)
+        titleLabel.textColor = UIColor(red: 0.12, green: 0.16, blue: 0.22, alpha: 1.0)
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
         
         searchButton = UIButton(type: .system)
         searchButton.setImage(UIImage(systemName: "magnifyingglass"), for: .normal)
@@ -107,6 +114,7 @@ class LogTimelineView: UIView {
         emptyStateSubLabel.textAlignment = .center
         emptyStateSubLabel.translatesAutoresizingMaskIntoConstraints = false
         
+        addSubview(titleLabel)
         addSubview(newLogButton)
         addSubview(filterContainerView)
         filterContainerView.addSubview(yearFilterButton)
@@ -122,12 +130,15 @@ class LogTimelineView: UIView {
     
     private func setupConstraints() {
         NSLayoutConstraint.activate([
-            newLogButton.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 16),
+            titleLabel.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 24),
+            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            
+            newLogButton.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 18),
             newLogButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             newLogButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            newLogButton.heightAnchor.constraint(equalToConstant: 48),
+            newLogButton.heightAnchor.constraint(equalToConstant: 44),
             
-            filterContainerView.topAnchor.constraint(equalTo: newLogButton.bottomAnchor, constant: 16),
+            filterContainerView.topAnchor.constraint(equalTo: newLogButton.bottomAnchor, constant: 10),
             filterContainerView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             filterContainerView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
             filterContainerView.heightAnchor.constraint(equalToConstant: 44),

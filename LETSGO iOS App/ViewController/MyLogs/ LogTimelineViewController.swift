@@ -16,11 +16,18 @@ class LogTimelineViewController: UIViewController {
         view = timelineView
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(true, animated: animated)
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "My Logs"
-        
-        navigationController?.navigationBar.prefersLargeTitles = true
         
         timelineView.tableView.delegate = self
         timelineView.tableView.dataSource = self
@@ -59,6 +66,13 @@ extension LogTimelineViewController: UITableViewDataSource, UITableViewDelegate 
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let detailVC = LogDetailViewController()
+        detailVC.logLocation = "Paris, France"
+        detailVC.logDate = "Nov 10-15, 2024"
+        detailVC.logTitle = "Trip to Eiffel Tower"
+        detailVC.logContent = "An amazing trip to the iconic Eiffel Tower in Paris. The view from the top was breathtaking and the city lights at night were magical. We enjoyed delicious French cuisine and explored the charming streets of the city."
+        detailVC.logIsPrivate = true
+        detailVC.logTags = ["travel", "paris", "adventure"]
+        detailVC.logPhotoCount = 5
         navigationController?.pushViewController(detailVC, animated: true)
     }
 }
