@@ -31,8 +31,6 @@ struct JournalEntry {
     let date: Date
 }
 
-<<<<<<< HEAD
-=======
 struct SocialUser {
     let id: UUID
     let username: String
@@ -54,15 +52,10 @@ struct CityVisit {
     let note: String
 }
 
->>>>>>> origin/Tab3-4
 final class UserContentDataStore {
     private(set) var profile: UserProfile
     private(set) var userGroups: [UserGroupSummary]
     private(set) var userJournals: [JournalEntry]
-<<<<<<< HEAD
-
-    init(profile: UserProfile? = nil, groups: [UserGroupSummary]? = nil, journals: [JournalEntry]? = nil) {
-=======
     private(set) var joinedGroups: [Group]
     private(set) var followers: [SocialUser]
     private(set) var following: [SocialUser]
@@ -75,7 +68,6 @@ final class UserContentDataStore {
          followers: [SocialUser]? = nil,
          following: [SocialUser]? = nil,
          visitedCities: [CityVisit]? = nil) {
->>>>>>> origin/Tab3-4
         let fallbackProfile = UserProfile(
             username: "Han",
             bio: "Night trains, film photos, and good coffee.",
@@ -87,22 +79,16 @@ final class UserContentDataStore {
 
         self.profile = profile ?? fallbackProfile
         self.userGroups = groups ?? UserContentDataStore.defaultGroups
-<<<<<<< HEAD
-        self.userJournals = journals ?? UserContentDataStore.defaultJournals
-=======
         self.userJournals = journals ?? []
         self.joinedGroups = joinedGroups ?? UserContentDataStore.defaultJoinedGroups
         self.followers = followers ?? UserContentDataStore.defaultFollowers
         self.following = following ?? UserContentDataStore.defaultFollowing
         self.visitedCities = visitedCities ?? UserContentDataStore.defaultVisitedCities
->>>>>>> origin/Tab3-4
     }
 
     func updateProfile(_ profile: UserProfile) {
         self.profile = profile
     }
-<<<<<<< HEAD
-=======
 
     func removeJoinedGroup(with id: UUID) {
         joinedGroups.removeAll { $0.id == id }
@@ -123,7 +109,6 @@ final class UserContentDataStore {
     func removeVisitedCity(with id: UUID) {
         visitedCities.removeAll { $0.id == id }
     }
->>>>>>> origin/Tab3-4
 }
 
 private extension UserContentDataStore {
@@ -148,26 +133,6 @@ private extension UserContentDataStore {
         ]
     }
 
-<<<<<<< HEAD
-    static var defaultJournals: [JournalEntry] {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy/MM/dd"
-        return [
-            JournalEntry(
-                id: UUID(),
-                title: "Bali Soft Tides",
-                coverImage: UIImage(systemName: "photo.on.rectangle"),
-                date: formatter.date(from: "2025/11/08") ?? Date()
-            ),
-            JournalEntry(
-                id: UUID(),
-                title: "Shanghai Riverside Evening",
-                coverImage: UIImage(systemName: "photo.on.rectangle.angled"),
-                date: formatter.date(from: "2025/10/19") ?? Date()
-            )
-        ]
-    }
-=======
     static var defaultJournals: [JournalEntry] { [] }
 
     static var defaultJoinedGroups: [Group] {
@@ -266,5 +231,4 @@ private extension UserContentDataStore {
             CityVisit(id: UUID(), cityName: "Boston", country: "USA", latitude: 42.3601, longitude: -71.0589, note: "Fall leaves study break")
         ]
     }
->>>>>>> origin/Tab3-4
 }
