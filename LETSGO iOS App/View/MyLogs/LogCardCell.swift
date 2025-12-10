@@ -150,4 +150,15 @@ class LogCardCell: UITableViewCell {
         ])
     }
 
+<<<<<<< HEAD
+    func configure(with entry: TravelLogEntry, formatter: DateFormatter) {
+        locationLabel.text = entry.location
+        titleLabel.text = entry.title
+        dateLabel.text = "\(formatter.string(from: entry.startDate)) - \(formatter.string(from: entry.endDate))"
+        privacyIconView.image = UIImage(systemName: entry.isPrivate ? "lock.fill" : "globe")
+        privacyLabel.text = entry.isPrivate ? "Private" : "Public"
+        morePhotosLabel.text = entry.photoCount > 0 ? "+\(entry.photoCount)" : ""
+    }
+=======
+>>>>>>> main
 }

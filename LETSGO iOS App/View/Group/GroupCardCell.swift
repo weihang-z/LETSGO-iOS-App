@@ -30,11 +30,19 @@ final class GroupCardCell: UITableViewCell {
 
     func configure(with group: Group, formatter: DateFormatter) {
         destinationLabel.text = group.destination
+<<<<<<< HEAD
+        dateLabel.text = formatter.string(from: group.startDate)
+        spotsLabel.text = "Spots left: \(group.spotsLeft)"
+        budgetLabel.text = "Budget: $\(group.budget)"
+        themeLabel.text = "\(group.theme) · \(group.city)"
+        organizerLabel.text = "Organizer: @\(group.organizer)"
+=======
         dateLabel.text = "📅 " + formatter.string(from: group.startDate)
         spotsLabel.text = "🚗 Spots left: \(group.spotsLeft)"
         budgetLabel.text = "💰 Budget: $\(group.budget)"
         themeLabel.text = "🎯 \(group.theme) · \(group.city)"
         organizerLabel.text = "👤 Organizer: @\(group.organizer)"
+>>>>>>> main
     }
 
     private func configureUI() {

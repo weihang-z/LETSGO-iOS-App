@@ -10,6 +10,7 @@ import UIKit
 final class GroupDetailViewController: UIViewController {
     var onGroupChanged: ((Group) -> Void)?
     var onMembershipChanged: ((Group, Bool) -> Void)?
+    var onGroupDeleted: ((Group) -> Void)?
 
     private let groupID: UUID
     private let dataStore: GroupDataStore
@@ -20,6 +21,8 @@ final class GroupDetailViewController: UIViewController {
     private let descriptionLabel = UILabel()
     private let membersStack = UIStackView()
     private let actionButton = UIButton(type: .system)
+    private let deleteButton = UIButton(type: .system)
+    private let buttonStack = UIStackView()
 
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -83,6 +86,23 @@ final class GroupDetailViewController: UIViewController {
         actionButton.heightAnchor.constraint(equalToConstant: 54).isActive = true
         actionButton.addTarget(self, action: #selector(primaryButtonTapped), for: .touchUpInside)
 
+        deleteButton.translatesAutoresizingMaskIntoConstraints = false
+        deleteButton.titleLabel?.font = UIFont.preferredFont(forTextStyle: .headline)
+        deleteButton.layer.cornerRadius = 14
+        deleteButton.layer.cornerCurve = .continuous
+        deleteButton.backgroundColor = .systemRed
+        deleteButton.setTitleColor(.white, for: .normal)
+        deleteButton.setTitle("Delete Group", for: .normal)
+        deleteButton.heightAnchor.constraint(equalToConstant: 54).isActive = true
+        deleteButton.addTarget(self, action: #selector(deleteButtonTapped), for: .touchUpInside)
+
+        buttonStack.axis = .horizontal
+        buttonStack.spacing = 12
+        buttonStack.distribution = .fillEqually
+        buttonStack.translatesAutoresizingMaskIntoConstraints = false
+        buttonStack.addArrangedSubview(actionButton)
+        buttonStack.addArrangedSubview(deleteButton)
+
         view.addSubview(scrollView)
         scrollView.addSubview(contentStack)
 
@@ -104,11 +124,11 @@ final class GroupDetailViewController: UIViewController {
         contentStack.addArrangedSubview(descriptionLabel)
         contentStack.addArrangedSubview(makeMembersCard())
 
-        view.addSubview(actionButton)
+        view.addSubview(buttonStack)
         NSLayoutConstraint.activate([
-            actionButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            actionButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            actionButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16)
+            buttonStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            buttonStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            buttonStack.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16)
         ])
     }
 
@@ -252,6 +272,7 @@ final class GroupDetailViewController: UIViewController {
     }
 
     private func updateActionButton() {
+        deleteButton.isHidden = !isCurrentUserOrganizer
         if isCurrentUserOrganizer {
             actionButton.setTitle("Edit Group", for: .normal)
             actionButton.backgroundColor = .systemOrange
@@ -281,6 +302,27 @@ final class GroupDetailViewController: UIViewController {
             guard let updated = dataStore.joinGroup(id: group.id, memberName: dataStore.currentUser) else { return }
             handleGroupUpdate(updated)
         }
+    }
+
+    @objc private func deleteButtonTapped() {
+        let alert = UIAlertController(
+            title: "Delete Group?",
+            message: "This will remove the trip for all members and cannot be undone.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Delete", style: .destructive, handler: { [weak self] _ in
+            self?.performGroupDeletion()
+        }))
+        present(alert, animated: true)
+    }
+
+    private func performGroupDeletion() {
+        guard isCurrentUserOrganizer else { return }
+        guard dataStore.deleteGroup(id: group.id) != nil else { return }
+        onMembershipChanged?(group, false)
+        onGroupDeleted?(group)
+        navigationController?.popViewController(animated: true)
     }
 
     private func handleGroupUpdate(_ updatedGroup: Group) {

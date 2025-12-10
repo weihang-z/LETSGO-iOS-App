@@ -20,6 +20,8 @@ final class ProfileOverviewViewController: UIViewController {
     private let buttonStackView = UIStackView()
     private let socialButtonStackView = UIStackView()
     private let travelMapButton = UIButton(type: .system)
+    private let bottomButtonStackView = UIStackView()
+    private let editProfileButton = UIButton(type: .system)
 
     init(dataStore: UserContentDataStore) {
         self.dataStore = dataStore
@@ -113,10 +115,10 @@ final class ProfileOverviewViewController: UIViewController {
         buttonStackView.spacing = 12
         buttonStackView.translatesAutoresizingMaskIntoConstraints = false
 
-        let editButton = makePrimaryButton(title: "Edit Profile", action: #selector(editProfileTapped))
-        let postsButton = makeSecondaryButton(title: "My Groups & Logs", action: #selector(myPostsTapped))
-        buttonStackView.addArrangedSubview(editButton)
-        buttonStackView.addArrangedSubview(postsButton)
+        let logsButton = makeSecondaryButton(title: "My Logs", action: #selector(myLogsTapped))
+        let groupsButton = makeSecondaryButton(title: "My Groups", action: #selector(myGroupsTapped))
+        buttonStackView.addArrangedSubview(logsButton)
+        buttonStackView.addArrangedSubview(groupsButton)
 
         socialButtonStackView.axis = .horizontal
         socialButtonStackView.distribution = .fillEqually
@@ -128,6 +130,15 @@ final class ProfileOverviewViewController: UIViewController {
         socialButtonStackView.addArrangedSubview(followingButton)
 
         configureTravelMapButton()
+
+        bottomButtonStackView.axis = .horizontal
+        bottomButtonStackView.distribution = .fillEqually
+        bottomButtonStackView.spacing = 12
+        bottomButtonStackView.translatesAutoresizingMaskIntoConstraints = false
+
+        configureEditProfileButton()
+        bottomButtonStackView.addArrangedSubview(editProfileButton)
+        bottomButtonStackView.addArrangedSubview(travelMapButton)
     }
 
     private func configureTravelMapButton() {
@@ -139,6 +150,17 @@ final class ProfileOverviewViewController: UIViewController {
         travelMapButton.translatesAutoresizingMaskIntoConstraints = false
         travelMapButton.heightAnchor.constraint(equalToConstant: 50).isActive = true
         travelMapButton.addTarget(self, action: #selector(travelMapTapped), for: .touchUpInside)
+    }
+
+    private func configureEditProfileButton() {
+        editProfileButton.setTitle("Edit Profile", for: .normal)
+        editProfileButton.backgroundColor = .systemBlue
+        editProfileButton.setTitleColor(.white, for: .normal)
+        editProfileButton.layer.cornerRadius = 14
+        editProfileButton.titleLabel?.font = UIFont.preferredFont(forTextStyle: .headline)
+        editProfileButton.translatesAutoresizingMaskIntoConstraints = false
+        editProfileButton.heightAnchor.constraint(equalToConstant: 50).isActive = true
+        editProfileButton.addTarget(self, action: #selector(editProfileTapped), for: .touchUpInside)
     }
 
     private func layoutContent() {
@@ -166,7 +188,7 @@ final class ProfileOverviewViewController: UIViewController {
         contentStackView.addArrangedSubview(statsStackView)
         contentStackView.addArrangedSubview(buttonStackView)
         contentStackView.addArrangedSubview(socialButtonStackView)
-        contentStackView.addArrangedSubview(travelMapButton)
+        contentStackView.addArrangedSubview(bottomButtonStackView)
     }
 
     private func refreshUI() {
@@ -198,8 +220,13 @@ final class ProfileOverviewViewController: UIViewController {
         navigationController?.pushViewController(controller, animated: true)
     }
 
-    @objc private func myPostsTapped() {
+    @objc private func myGroupsTapped() {
         let controller = MyPostsViewController(dataStore: dataStore)
+        navigationController?.pushViewController(controller, animated: true)
+    }
+
+    @objc private func myLogsTapped() {
+        let controller = LogTimelineViewController(allowsCreation: false)
         navigationController?.pushViewController(controller, animated: true)
     }
 
@@ -220,7 +247,7 @@ final class ProfileOverviewViewController: UIViewController {
     }
 
     @objc private func followingTapped() {
-        let controller = FollowersListViewController(title: "Following", users: dataStore.following)
+        let controller = FollowingFriendsViewController()
         navigationController?.pushViewController(controller, animated: true)
     }
 
@@ -258,18 +285,6 @@ final class ProfileOverviewViewController: UIViewController {
             stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -8)
         ])
         return container
-    }
-
-    private func makePrimaryButton(title: String, action: Selector) -> UIButton {
-        let button = UIButton(type: .system)
-        button.setTitle(title, for: .normal)
-        button.backgroundColor = .systemBlue
-        button.tintColor = .white
-        button.layer.cornerRadius = 14
-        button.titleLabel?.font = UIFont.preferredFont(forTextStyle: .headline)
-        button.addTarget(self, action: action, for: .touchUpInside)
-        button.heightAnchor.constraint(equalToConstant: 50).isActive = true
-        return button
     }
 
     private func makeSecondaryButton(title: String, action: Selector) -> UIButton {

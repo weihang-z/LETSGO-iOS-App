@@ -55,4 +55,10 @@ final class GroupDataStore {
         groups[index] = target
         return target
     }
+
+    @discardableResult
+    func deleteGroup(id: UUID) -> Group? {
+        guard let index = groups.firstIndex(where: { $0.id == id }) else { return nil }
+        return groups.remove(at: index)
+    }
 }

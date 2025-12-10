@@ -113,6 +113,11 @@ final class TravelGroupsListViewController: UIViewController {
                 self.userContentStore.removeJoinedGroup(with: updatedGroup.id)
             }
         }
+        detailController.onGroupDeleted = { [weak self] deletedGroup in
+            guard let self else { return }
+            self.userContentStore.removeJoinedGroup(with: deletedGroup.id)
+            self.tableView.reloadData()
+        }
         navigationController?.pushViewController(detailController, animated: true)
     }
 

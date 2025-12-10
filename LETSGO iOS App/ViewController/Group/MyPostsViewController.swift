@@ -11,13 +11,16 @@ final class MyPostsViewController: UIViewController {
     private var joinedGroups: [Group] {
         dataStore.joinedGroups
     }
-    private var logs: [JournalEntry] { [] }
-    private var selectedSegment: Segment = .joinedGroups {
-        didSet { tableView.reloadData() }
-    }
 
-    private let segmentedControl = UISegmentedControl(items: ["Joined Groups", "My Logs"])
     private let tableView = UITableView(frame: .zero, style: .grouped)
+    private let emptyStateLabel: UILabel = {
+        let label = UILabel()
+        label.text = "You have not joined any groups yet."
+        label.textColor = .secondaryLabel
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        return label
+    }()
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
@@ -35,9 +38,8 @@ final class MyPostsViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "My Groups & Logs"
+        title = "My Groups"
         view.backgroundColor = .systemBackground
-        configureSegmentedControl()
         configureTableView()
         layoutContent()
     }
@@ -45,12 +47,6 @@ final class MyPostsViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         tableView.reloadData()
-    }
-
-    private func configureSegmentedControl() {
-        segmentedControl.selectedSegmentIndex = 0
-        segmentedControl.addTarget(self, action: #selector(segmentChanged), for: .valueChanged)
-        segmentedControl.translatesAutoresizingMaskIntoConstraints = false
     }
 
     private func configureTableView() {
@@ -61,54 +57,27 @@ final class MyPostsViewController: UIViewController {
     }
 
     private func layoutContent() {
-        view.addSubview(segmentedControl)
         view.addSubview(tableView)
-
         NSLayoutConstraint.activate([
-            segmentedControl.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
-            segmentedControl.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            segmentedControl.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-
-            tableView.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: 16),
+            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
-
-    @objc private func segmentChanged() {
-        selectedSegment = Segment(rawValue: segmentedControl.selectedSegmentIndex) ?? .joinedGroups
-    }
-}
-
-extension MyPostsViewController {
-    private enum Segment: Int {
-        case joinedGroups
-        case logs
-    }
 }
 
 extension MyPostsViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        switch selectedSegment {
-        case .joinedGroups:
-            return joinedGroups.count
-        case .logs:
-            return 0
-        }
+        tableView.backgroundView = joinedGroups.isEmpty ? emptyStateLabel : nil
+        return joinedGroups.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
         cell.selectionStyle = .none
-
-        switch selectedSegment {
-        case .joinedGroups:
-            let group = joinedGroups[indexPath.row]
-            cell.contentConfiguration = joinedGroupConfiguration(for: group)
-        case .logs:
-            break
-        }
+        let group = joinedGroups[indexPath.row]
+        cell.contentConfiguration = joinedGroupConfiguration(for: group)
         return cell
     }
 
@@ -127,18 +96,13 @@ extension MyPostsViewController: UITableViewDataSource {
 extension MyPostsViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        switch selectedSegment {
-        case .joinedGroups:
-            let group = joinedGroups[indexPath.row]
-            let controller = JoinedGroupDetailViewController(group: group)
-            controller.onLeave = { [weak self] removedGroup in
-                self?.dataStore.removeJoinedGroup(with: removedGroup.id)
-                self?.tableView.reloadData()
-            }
-            navigationController?.pushViewController(controller, animated: true)
-        case .logs:
-            break
+        let group = joinedGroups[indexPath.row]
+        let controller = JoinedGroupDetailViewController(group: group)
+        controller.onLeave = { [weak self] removedGroup in
+            self?.dataStore.removeJoinedGroup(with: removedGroup.id)
+            self?.tableView.reloadData()
         }
+        navigationController?.pushViewController(controller, animated: true)
     }
 }
 

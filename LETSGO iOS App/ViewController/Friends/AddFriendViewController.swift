@@ -19,6 +19,7 @@ class AddFriendViewController: UIViewController {
         let textField = UITextField()
         textField.placeholder = "Enter username"
         textField.borderStyle = .roundedRect
+        textField.autocapitalizationType = .none
         textField.translatesAutoresizingMaskIntoConstraints = false
         return textField
     }()
@@ -35,6 +36,24 @@ class AddFriendViewController: UIViewController {
         let textField = UITextField()
         textField.placeholder = "Enter region"
         textField.borderStyle = .roundedRect
+        textField.translatesAutoresizingMaskIntoConstraints = false
+        return textField
+    }()
+
+    private let emailLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Email"
+        label.font = UIFont.systemFont(ofSize: 16, weight: .medium)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
+    private let emailTextField: UITextField = {
+        let textField = UITextField()
+        textField.placeholder = "Enter email address"
+        textField.borderStyle = .roundedRect
+        textField.autocapitalizationType = .none
+        textField.keyboardType = .emailAddress
         textField.translatesAutoresizingMaskIntoConstraints = false
         return textField
     }()
@@ -100,6 +119,8 @@ class AddFriendViewController: UIViewController {
         view.addSubview(usernameTextField)
         view.addSubview(regionLabel)
         view.addSubview(regionTextField)
+        view.addSubview(emailLabel)
+        view.addSubview(emailTextField)
         view.addSubview(phoneLabel)
         view.addSubview(phoneTextField)
         view.addSubview(noteLabel)
@@ -131,8 +152,17 @@ class AddFriendViewController: UIViewController {
             regionTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             regionTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             regionTextField.heightAnchor.constraint(equalToConstant: 44),
+
+            emailLabel.topAnchor.constraint(equalTo: regionTextField.bottomAnchor, constant: 20),
+            emailLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            emailLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             
-            phoneLabel.topAnchor.constraint(equalTo: regionTextField.bottomAnchor, constant: 20),
+            emailTextField.topAnchor.constraint(equalTo: emailLabel.bottomAnchor, constant: 10),
+            emailTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            emailTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            emailTextField.heightAnchor.constraint(equalToConstant: 44),
+            
+            phoneLabel.topAnchor.constraint(equalTo: emailTextField.bottomAnchor, constant: 20),
             phoneLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             phoneLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             
@@ -163,20 +193,47 @@ class AddFriendViewController: UIViewController {
     }
     
     @objc private func saveButtonTapped() {
-        guard let username = usernameTextField.text, !username.isEmpty else {
+        let username = trimmedText(from: usernameTextField)
+        guard username.isEmpty == false else {
             showAlert(message: "Please enter a username")
             return
         }
         
-        guard let region = regionTextField.text, !region.isEmpty else {
+        let region = trimmedText(from: regionTextField)
+        guard region.isEmpty == false else {
             showAlert(message: "Please enter a region")
             return
         }
         
-        let phoneNumber = phoneTextField.text ?? ""
-        let note = noteTextField.text ?? ""
+        let email = trimmedText(from: emailTextField)
+        guard email.isEmpty == false else {
+            showAlert(message: "Please enter an email address")
+            return
+        }
+        guard isValidEmail(email) else {
+            showAlert(message: "Please enter a valid email address")
+            return
+        }
         
-        let newFriend = Friend(username: username, region: region, note: note, phoneNumber: phoneNumber, nickname: nil)
+        let phoneNumberRaw = trimmedText(from: phoneTextField)
+        guard phoneNumberRaw.isEmpty == false else {
+            showAlert(message: "Please enter a phone number")
+            return
+        }
+        let digits = digitsOnly(from: phoneNumberRaw)
+        guard digits.count == 10 else {
+            showAlert(message: "Please enter a 10-digit US phone number")
+            return
+        }
+        let formattedPhone = formatPhoneNumber(from: digits)
+        
+        let note = trimmedText(from: noteTextField)
+        guard note.isEmpty == false else {
+            showAlert(message: "Please enter a note")
+            return
+        }
+        
+        let newFriend = Friend(username: username, region: region, email: email, note: note, phoneNumber: formattedPhone, nickname: nil)
         DataManager.shared.addFriend(newFriend)
         
         let alert = UIAlertController(title: "Success", message: "Friend added successfully!", preferredStyle: .alert)
@@ -184,6 +241,26 @@ class AddFriendViewController: UIViewController {
             self?.navigationController?.popViewController(animated: true)
         })
         present(alert, animated: true)
+    }
+    
+    private func trimmedText(from textField: UITextField) -> String {
+        textField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+    
+    private func isValidEmail(_ email: String) -> Bool {
+        let pattern = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}"
+        return NSPredicate(format: "SELF MATCHES %@", pattern).evaluate(with: email)
+    }
+    
+    private func digitsOnly(from string: String) -> String {
+        return string.filter { $0.isNumber }
+    }
+    
+    private func formatPhoneNumber(from digits: String) -> String {
+        let area = digits.prefix(3)
+        let middle = digits.dropFirst(3).prefix(3)
+        let last = digits.suffix(4)
+        return "(\(area)) \(middle)-\(last)"
     }
     
     private func showAlert(message: String) {

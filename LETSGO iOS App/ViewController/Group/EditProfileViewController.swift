@@ -50,7 +50,8 @@ final class EditProfileViewController: UIViewController {
         avatarButton.tintColor = .systemBlue
         avatarButton.backgroundColor = UIColor.systemBlue.withAlphaComponent(0.1)
         avatarButton.layer.cornerRadius = 50
-        avatarButton.setImage(profile.avatarImage ?? UIImage(systemName: "person.crop.circle"), for: .normal)
+        avatarButton.setImage(nil, for: .normal)
+        updateAvatarButtonImage()
         avatarButton.heightAnchor.constraint(equalToConstant: 100).isActive = true
         avatarButton.widthAnchor.constraint(equalTo: avatarButton.heightAnchor).isActive = true
         avatarButton.addTarget(self, action: #selector(avatarTapped), for: .touchUpInside)
@@ -91,10 +92,24 @@ final class EditProfileViewController: UIViewController {
         bioTextView.text = profile.bio
     }
 
+    private func updateAvatarButtonImage() {
+        if let image = profile.avatarImage {
+            avatarButton.setBackgroundImage(image, for: .normal)
+            avatarButton.setImage(nil, for: .normal)
+        } else {
+            avatarButton.setBackgroundImage(nil, for: .normal)
+            avatarButton.setImage(UIImage(systemName: "person.crop.circle"), for: .normal)
+        }
+    }
+
     @objc private func avatarTapped() {
-        let alert = UIAlertController(title: "Upload Coming Soon", message: "Profile Picture editing will be available later.", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alert, animated: true)
+        let controller = AvatarUploadViewController(currentImage: profile.avatarImage)
+        controller.onSave = { [weak self] updatedImage in
+            guard let self else { return }
+            self.profile.avatarImage = updatedImage
+            self.updateAvatarButtonImage()
+        }
+        navigationController?.pushViewController(controller, animated: true)
     }
 
     @objc private func saveTapped() {

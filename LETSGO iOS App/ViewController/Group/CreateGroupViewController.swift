@@ -139,18 +139,40 @@ final class CreateGroupViewController: UIViewController {
     }
 
     @objc private func saveTapped() {
-        guard let destination = destinationField.text, destination.isEmpty == false else {
+        let destination = destinationField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard destination.isEmpty == false else {
             showAlert(message: "Destination is required.")
             return
         }
-        let trimmedCity = cityField.text?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let cityText = (trimmedCity?.isEmpty == false ? trimmedCity : destination) ?? destination
+        let cityText = cityField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard cityText.isEmpty == false else {
+            showAlert(message: "City is required.")
+            return
+        }
 
-        let trimmedTheme = themeField.text?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let themeText = (trimmedTheme?.isEmpty == false ? trimmedTheme : "General") ?? "General"
-        let budget = Int(budgetField.text ?? "") ?? 0
-        let spots = Int(spotsField.text ?? "") ?? 0
-        let descriptionText = descriptionView.text ?? ""
+        let themeText = themeField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard themeText.isEmpty == false else {
+            showAlert(message: "Theme is required.")
+            return
+        }
+
+        let budgetText = budgetField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard let budget = Int(budgetText), budget > 0 else {
+            showAlert(message: "Budget must be a positive number.")
+            return
+        }
+
+        let spotsText = spotsField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard let spots = Int(spotsText), spots >= 0 else {
+            showAlert(message: "Spots left must be zero or greater.")
+            return
+        }
+
+        let descriptionText = descriptionView.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard descriptionText.isEmpty == false else {
+            showAlert(message: "Description cannot be empty.")
+            return
+        }
 
         let groupToSave: Group
         if var existing = group {

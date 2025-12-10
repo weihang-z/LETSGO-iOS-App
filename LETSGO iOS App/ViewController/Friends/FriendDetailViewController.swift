@@ -62,6 +62,22 @@ class FriendDetailViewController: UIViewController {
         return label
     }()
     
+    private let emailIcon: UILabel = {
+        let label = UILabel()
+        label.text = "✉️"
+        label.font = UIFont.systemFont(ofSize: 24)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
+    private let emailLabel: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.systemFont(ofSize: 18, weight: .medium)
+        label.textColor = .label
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
     private let noteLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: 18, weight: .regular)
@@ -117,6 +133,8 @@ class FriendDetailViewController: UIViewController {
         containerView.addSubview(usernameLabel)
         containerView.addSubview(locationIcon)
         containerView.addSubview(locationLabel)
+        containerView.addSubview(emailIcon)
+        containerView.addSubview(emailLabel)
         containerView.addSubview(phoneIcon)
         containerView.addSubview(phoneLabel)
         containerView.addSubview(noteLabel)
@@ -143,7 +161,13 @@ class FriendDetailViewController: UIViewController {
             locationLabel.centerYAnchor.constraint(equalTo: locationIcon.centerYAnchor),
             locationLabel.leadingAnchor.constraint(equalTo: locationIcon.trailingAnchor, constant: 5),
             
-            phoneIcon.topAnchor.constraint(equalTo: locationIcon.bottomAnchor, constant: 15),
+            emailIcon.topAnchor.constraint(equalTo: locationIcon.bottomAnchor, constant: 15),
+            emailIcon.centerXAnchor.constraint(equalTo: containerView.centerXAnchor, constant: -50),
+            
+            emailLabel.centerYAnchor.constraint(equalTo: emailIcon.centerYAnchor),
+            emailLabel.leadingAnchor.constraint(equalTo: emailIcon.trailingAnchor, constant: 5),
+            
+            phoneIcon.topAnchor.constraint(equalTo: emailIcon.bottomAnchor, constant: 15),
             phoneIcon.centerXAnchor.constraint(equalTo: containerView.centerXAnchor, constant: -50),
             
             phoneLabel.centerYAnchor.constraint(equalTo: phoneIcon.centerYAnchor),
@@ -167,20 +191,29 @@ class FriendDetailViewController: UIViewController {
             usernameLabel.text = friend.nickname != nil ? "@\(friend.username)" : ""
             usernameLabel.isHidden = friend.nickname == nil
             locationLabel.text = friend.region
+            emailLabel.text = friend.email
             phoneLabel.text = friend.phoneNumber.isEmpty ? "Not provided" : friend.phoneNumber
             phoneLabel.textColor = friend.phoneNumber.isEmpty ? .systemGray : .systemBlue
             noteLabel.text = friend.note.isEmpty ? "No notes" : friend.note
             timeLabel.text = ""
             phoneIcon.isHidden = false
             phoneLabel.isHidden = false
+            emailIcon.isHidden = false
+            emailLabel.isHidden = friend.email.isEmpty
+            noteLabel.isHidden = false
+            timeLabel.isHidden = true
         } else if let log = friendLog {
             nameLabel.text = log.name
             usernameLabel.isHidden = true
             locationLabel.text = log.location
             phoneIcon.isHidden = true
             phoneLabel.isHidden = true
+            emailIcon.isHidden = true
+            emailLabel.isHidden = true
             noteLabel.text = log.activity
+            noteLabel.isHidden = log.activity.isEmpty
             timeLabel.text = log.time
+            timeLabel.isHidden = log.time.isEmpty
         }
     }
     
@@ -224,6 +257,7 @@ class FriendDetailViewController: UIViewController {
         self.friend = Friend(
             username: friend.username,
             region: friend.region,
+            email: friend.email,
             note: friend.note,
             phoneNumber: friend.phoneNumber,
             nickname: nickname

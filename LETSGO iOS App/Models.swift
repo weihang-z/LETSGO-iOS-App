@@ -15,6 +15,7 @@ struct FriendLog {
 struct Friend {
     let username: String
     let region: String
+    let email: String
     let note: String
     let phoneNumber: String
     var nickname: String?

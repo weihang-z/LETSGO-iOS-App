@@ -38,8 +38,8 @@ class DataManager {
         
         // Sample friends - only 2
         friends = [
-            Friend(username: "Alice", region: "Chengdu", note: "Loves spicy food", phoneNumber: "+86 138 0000 0000", nickname: nil),
-            Friend(username: "Bob", region: "Xiamen", note: "Cycling buddy", phoneNumber: "+86 159 0000 0000", nickname: nil)
+            Friend(username: "Alice", region: "Chengdu", email: "alice@example.com", note: "Loves spicy food", phoneNumber: "503-555-1111", nickname: nil),
+            Friend(username: "Bob", region: "Xiamen", email: "bob@example.com", note: "Cycling buddy", phoneNumber: "415-555-2222", nickname: nil)
         ]
     }
     
@@ -49,6 +49,7 @@ class DataManager {
             friends[index] = Friend(
                 username: friend.username,
                 region: friend.region,
+                email: friend.email,
                 note: friend.note,
                 phoneNumber: friend.phoneNumber,
                 nickname: nickname
