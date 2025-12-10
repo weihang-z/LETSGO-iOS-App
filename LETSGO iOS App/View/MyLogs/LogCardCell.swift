@@ -150,7 +150,6 @@ class LogCardCell: UITableViewCell {
         ])
     }
 
-<<<<<<< HEAD
     func configure(with entry: TravelLogEntry, formatter: DateFormatter) {
         locationLabel.text = entry.location
         titleLabel.text = entry.title
@@ -159,6 +158,5 @@ class LogCardCell: UITableViewCell {
         privacyLabel.text = entry.isPrivate ? "Private" : "Public"
         morePhotosLabel.text = entry.photoCount > 0 ? "+\(entry.photoCount)" : ""
     }
-=======
->>>>>>> main
+
 }
