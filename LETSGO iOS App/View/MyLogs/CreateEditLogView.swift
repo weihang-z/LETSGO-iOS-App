@@ -38,7 +38,6 @@ class CreateEditLogView: UIView {
     
     var photosLabel: UILabel!
     var photosCollectionView: UICollectionView!
-    var addPhotoButton: UIButton!
     var photosCollectionHeightConstraint: NSLayoutConstraint!
     
     override init(frame: CGRect) {
@@ -201,17 +200,6 @@ class CreateEditLogView: UIView {
         photosCollectionView.showsHorizontalScrollIndicator = false
         photosCollectionView.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(photosCollectionView)
-        
-        var addPhotoConfig = UIButton.Configuration.tinted()
-        addPhotoConfig.title = "Add Photos"
-        addPhotoConfig.image = UIImage(systemName: "photo.on.rectangle.angled")
-        addPhotoConfig.imagePadding = 8
-        addPhotoConfig.baseBackgroundColor = .systemBlue
-        addPhotoConfig.baseForegroundColor = .systemBlue
-        addPhotoConfig.cornerStyle = .medium
-        addPhotoButton = UIButton(configuration: addPhotoConfig)
-        addPhotoButton.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(addPhotoButton)
     }
     
     func createSectionLabel(text: String) -> UILabel {
@@ -337,9 +325,6 @@ class CreateEditLogView: UIView {
             
             photosLabel.topAnchor.constraint(equalTo: tagsHintLabel.bottomAnchor, constant: 20),
             photosLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            
-            addPhotoButton.centerYAnchor.constraint(equalTo: photosLabel.centerYAnchor),
-            addPhotoButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             
             photosCollectionView.topAnchor.constraint(equalTo: photosLabel.bottomAnchor, constant: 12),
             photosCollectionView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),

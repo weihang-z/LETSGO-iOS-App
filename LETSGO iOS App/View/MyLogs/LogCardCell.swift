@@ -16,6 +16,7 @@ class LogCardCell: UITableViewCell {
     var locationLabel: UILabel!
     var titleLabel: UILabel!
     var thumbnailStackView: UIStackView!
+    private var thumbnailImageViews: [UIImageView] = []
     var morePhotosLabel: UILabel!
     var dateLabel: UILabel!
     var privacyIconView: UIImageView!
@@ -106,6 +107,7 @@ class LogCardCell: UITableViewCell {
             thumbnailView.widthAnchor.constraint(equalToConstant: 60).isActive = true
             thumbnailView.heightAnchor.constraint(equalToConstant: 60).isActive = true
             thumbnailStackView.addArrangedSubview(thumbnailView)
+            thumbnailImageViews.append(thumbnailView)
         }
     }
     
@@ -153,10 +155,28 @@ class LogCardCell: UITableViewCell {
     func configure(with entry: TravelLogEntry, formatter: DateFormatter) {
         locationLabel.text = entry.location
         titleLabel.text = entry.title
-        dateLabel.text = "\(formatter.string(from: entry.startDate)) - \(formatter.string(from: entry.endDate))"
+        let start = formatter.string(from: entry.startDate)
+        let end = formatter.string(from: entry.endDate)
+        dateLabel.text = (start == end) ? start : "\(start) - \(end)"
         privacyIconView.image = UIImage(systemName: entry.isPrivate ? "lock.fill" : "globe")
         privacyLabel.text = entry.isPrivate ? "Private" : "Public"
-        morePhotosLabel.text = entry.photoCount > 0 ? "+\(entry.photoCount)" : ""
+        
+        let images = ([entry.coverImage].compactMap { $0 }) + entry.photos
+        let visibleCount = min(images.count, 3)
+        morePhotosLabel.text = images.count > 3 ? "+\(images.count - 3)" : ""
+        morePhotosLabel.isHidden = images.count <= 3
+        
+        for (index, imageView) in thumbnailImageViews.enumerated() {
+            if index < visibleCount {
+                imageView.isHidden = false
+                imageView.image = images[index]
+                imageView.backgroundColor = .clear
+            } else {
+                imageView.isHidden = true
+                imageView.image = nil
+                imageView.backgroundColor = UIColor(red: 0.90, green: 0.91, blue: 0.92, alpha: 1.0)
+            }
+        }
     }
 
 }

@@ -7,7 +7,6 @@ import UIKit
 
 class FriendLogViewController: UIViewController {
     
-    // MARK: - UI Elements
     private let tableView: UITableView = {
         let table = UITableView()
         table.translatesAutoresizingMaskIntoConstraints = false
@@ -26,12 +25,24 @@ class FriendLogViewController: UIViewController {
         return button
     }()
     
-    // MARK: - Lifecycle
+    
+    private let activityIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .large)
+        indicator.hidesWhenStopped = true
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        return indicator
+    }()
+    
+    private let refreshControl = UIRefreshControl()
+    private let firebaseService = FirebaseService.shared
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
         setupUI()
         setupConstraints()
+        setupDataManagerCallback()
+        fetchFriendLogs()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -39,12 +50,10 @@ class FriendLogViewController: UIViewController {
         tableView.reloadData()
     }
     
-    // MARK: - Setup
     private func setupUI() {
         title = "Friend's Log"
         view.backgroundColor = .systemBackground
         
-        // Add navigation button to see all friends
         navigationItem.rightBarButtonItem = UIBarButtonItem(
             title: "My Friends",
             style: .plain,
@@ -54,9 +63,13 @@ class FriendLogViewController: UIViewController {
         
         view.addSubview(addFriendButton)
         view.addSubview(tableView)
+        view.addSubview(activityIndicator)
         
         tableView.delegate = self
         tableView.dataSource = self
+        
+        refreshControl.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
+        tableView.refreshControl = refreshControl
         
         addFriendButton.addTarget(self, action: #selector(addFriendButtonTapped), for: .touchUpInside)
     }
@@ -71,11 +84,42 @@ class FriendLogViewController: UIViewController {
             tableView.topAnchor.constraint(equalTo: addFriendButton.bottomAnchor, constant: 20),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+            tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            
+            activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
     }
     
-    // MARK: - Actions
+    private func setupDataManagerCallback() {
+        DataManager.shared.onDataUpdated = { [weak self] in
+            DispatchQueue.main.async {
+                self?.tableView.reloadData()
+            }
+        }
+    }
+    
+    private func fetchFriendLogs() {
+        activityIndicator.startAnimating()
+        
+        DataManager.shared.fetchFriends { [weak self] _ in
+            DispatchQueue.main.async {
+                self?.activityIndicator.stopAnimating()
+                self?.refreshControl.endRefreshing()
+                self?.tableView.reloadData()
+            }
+        }
+    }
+    
+    @objc private func handleRefresh() {
+        DataManager.shared.fetchFriendsTravelLogs { [weak self] _ in
+            DispatchQueue.main.async {
+                self?.refreshControl.endRefreshing()
+                self?.tableView.reloadData()
+            }
+        }
+    }
+    
     @objc private func addFriendButtonTapped() {
         let addFriendVC = AddFriendViewController()
         navigationController?.pushViewController(addFriendVC, animated: true)
@@ -87,10 +131,9 @@ class FriendLogViewController: UIViewController {
     }
 }
 
-// MARK: - UITableViewDelegate & DataSource
 extension FriendLogViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return DataManager.shared.friendLogs.count
+        return DataManager.shared.friendTravelLogs.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -98,7 +141,7 @@ extension FriendLogViewController: UITableViewDelegate, UITableViewDataSource {
             return UITableViewCell()
         }
         
-        let log = DataManager.shared.friendLogs[indexPath.row]
+        let log = DataManager.shared.friendTravelLogs[indexPath.row]
         cell.configure(with: log)
         
         return cell
@@ -111,27 +154,20 @@ extension FriendLogViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
-        let log = DataManager.shared.friendLogs[indexPath.row]
+        let log = DataManager.shared.friendTravelLogs[indexPath.row]
         
-        // Check if this person is in our friends list
-        if let friend = DataManager.shared.friends.first(where: { $0.username == log.name }) {
-            // Show friend profile (with edit nickname button and phone number)
-            let detailVC = FriendDetailViewController()
-            detailVC.friend = friend
-            detailVC.onNicknameUpdated = { [weak self] in
-                self?.tableView.reloadData()
+        activityIndicator.startAnimating()
+        loadEntry(for: log) { [weak self] entry in
+            DispatchQueue.main.async {
+                self?.activityIndicator.stopAnimating()
+                guard let entry = entry else { return }
+                let detailVC = LogDetailViewController(entry: entry, allowEditing: false)
+                self?.navigationController?.pushViewController(detailVC, animated: true)
             }
-            navigationController?.pushViewController(detailVC, animated: true)
-        } else {
-            // Show log details only
-            let detailVC = FriendDetailViewController()
-            detailVC.friendLog = log
-            navigationController?.pushViewController(detailVC, animated: true)
         }
     }
 }
 
-// MARK: - Custom Cell
 class FriendLogCell: UITableViewCell {
     
     private let nameLabel: UILabel = {
@@ -200,10 +236,56 @@ class FriendLogCell: UITableViewCell {
         ])
     }
     
-    func configure(with log: FriendLog) {
-        nameLabel.text = "📍 \(log.name)"
-        locationLabel.text = log.location
-        activityLabel.text = log.activity
-        timeLabel.text = log.time
+    func configure(with log: FriendTravelLog) {
+        nameLabel.text = "📍 \(log.authorName)"
+        locationLabel.text = log.city
+        activityLabel.text = log.title
+        timeLabel.text = log.timeAgo
+    }
+}
+
+private extension FriendLogViewController {
+    func loadEntry(for log: FriendTravelLog, completion: @escaping (TravelLogEntry?) -> Void) {
+        let group = DispatchGroup()
+        var coverImage: UIImage?
+        var photos: [UIImage] = []
+        
+        if let coverURL = log.coverImageURL {
+            group.enter()
+            firebaseService.downloadImage(from: coverURL) { image in
+                coverImage = image
+                group.leave()
+            }
+        }
+        
+        for url in log.photoURLs {
+            group.enter()
+            firebaseService.downloadImage(from: url) { image in
+                if let image = image {
+                    photos.append(image)
+                }
+                group.leave()
+            }
+        }
+        
+        group.notify(queue: .main) { [weak self] in
+            guard self != nil else { completion(nil); return }
+            let entry = TravelLogEntry(
+                id: UUID(uuidString: log.id) ?? UUID(),
+                title: log.title,
+                location: log.location,
+                city: log.city,
+                startDate: log.startDate,
+                endDate: log.endDate,
+                summary: log.summary,
+                isPrivate: false,
+                tags: log.tags,
+                coverImage: coverImage ?? photos.first,
+                photos: photos,
+                coverImageURL: log.coverImageURL,
+                photoURLs: log.photoURLs
+            )
+            completion(entry)
+        }
     }
 }

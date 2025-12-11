@@ -7,23 +7,11 @@ import UIKit
 
 class FriendListViewController: UIViewController {
     
-    // MARK: - UI Elements
     private let tableView: UITableView = {
         let table = UITableView()
         table.translatesAutoresizingMaskIntoConstraints = false
         table.register(FriendCell.self, forCellReuseIdentifier: "FriendCell")
         return table
-    }()
-    
-    private let addFriendButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("Add Friend", for: .normal)
-        button.titleLabel?.font = UIFont.systemFont(ofSize: 18, weight: .semibold)
-        button.backgroundColor = .systemBlue
-        button.setTitleColor(.white, for: .normal)
-        button.layer.cornerRadius = 10
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
     }()
     
     private let emptyStateLabel: UILabel = {
@@ -37,13 +25,20 @@ class FriendListViewController: UIViewController {
         return label
     }()
     
-    // MARK: - Lifecycle
+    private let activityIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .large)
+        indicator.hidesWhenStopped = true
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        return indicator
+    }()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
         setupUI()
         setupConstraints()
-        updateEmptyState()
+        setupDataManagerCallback()
+        fetchFriends()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -52,29 +47,21 @@ class FriendListViewController: UIViewController {
         updateEmptyState()
     }
     
-    // MARK: - Setup
     private func setupUI() {
         title = "Friends"
         view.backgroundColor = .systemBackground
         
-        view.addSubview(addFriendButton)
         view.addSubview(tableView)
         view.addSubview(emptyStateLabel)
+        view.addSubview(activityIndicator)
         
         tableView.delegate = self
         tableView.dataSource = self
-        
-        addFriendButton.addTarget(self, action: #selector(addFriendButtonTapped), for: .touchUpInside)
     }
     
     private func setupConstraints() {
         NSLayoutConstraint.activate([
-            addFriendButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
-            addFriendButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            addFriendButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            addFriendButton.heightAnchor.constraint(equalToConstant: 50),
-            
-            tableView.topAnchor.constraint(equalTo: addFriendButton.bottomAnchor, constant: 20),
+            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
@@ -82,22 +69,40 @@ class FriendListViewController: UIViewController {
             emptyStateLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             emptyStateLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             emptyStateLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
-            emptyStateLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40)
+            emptyStateLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
+            
+            activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
+    }
+    
+    private func setupDataManagerCallback() {
+        DataManager.shared.onDataUpdated = { [weak self] in
+            DispatchQueue.main.async {
+                self?.tableView.reloadData()
+                self?.updateEmptyState()
+            }
+        }
+    }
+    
+    private func fetchFriends() {
+        activityIndicator.startAnimating()
+        emptyStateLabel.isHidden = true
+        
+        DataManager.shared.fetchFriends { [weak self] _ in
+            DispatchQueue.main.async {
+                self?.activityIndicator.stopAnimating()
+                self?.tableView.reloadData()
+                self?.updateEmptyState()
+            }
+        }
     }
     
     private func updateEmptyState() {
         emptyStateLabel.isHidden = !DataManager.shared.friends.isEmpty
     }
-    
-    // MARK: - Actions
-    @objc private func addFriendButtonTapped() {
-        let addFriendVC = AddFriendViewController()
-        navigationController?.pushViewController(addFriendVC, animated: true)
-    }
 }
 
-// MARK: - UITableViewDelegate & DataSource
 extension FriendListViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return DataManager.shared.friends.count
@@ -110,6 +115,7 @@ extension FriendListViewController: UITableViewDelegate, UITableViewDataSource {
         
         let friend = DataManager.shared.friends[indexPath.row]
         cell.configure(with: friend)
+        cell.loadAvatar(urlString: friend.avatarURL)
         
         return cell
     }
@@ -129,10 +135,47 @@ extension FriendListViewController: UITableViewDelegate, UITableViewDataSource {
         }
         navigationController?.pushViewController(detailVC, animated: true)
     }
+    
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let deleteAction = UIContextualAction(style: .destructive, title: "Remove") { [weak self] _, _, completionHandler in
+            let friend = DataManager.shared.friends[indexPath.row]
+            
+            let alert = UIAlertController(
+                title: "Remove Friend",
+                message: "Are you sure you want to remove \(friend.username) from your friends?",
+                preferredStyle: .alert
+            )
+            
+            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in
+                completionHandler(false)
+            })
+            
+            alert.addAction(UIAlertAction(title: "Remove", style: .destructive) { _ in
+                DataManager.shared.removeFriend(username: friend.username) { success in
+                    completionHandler(success)
+                }
+            })
+            
+            self?.present(alert, animated: true)
+        }
+        deleteAction.image = UIImage(systemName: "person.badge.minus")
+        
+        return UISwipeActionsConfiguration(actions: [deleteAction])
+    }
 }
 
-// MARK: - Custom Cell
 class FriendCell: UITableViewCell {
+    
+    private let avatarImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.image = UIImage(systemName: "person.circle.fill")
+        imageView.tintColor = .systemBlue
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
+        imageView.layer.cornerRadius = 25
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        return imageView
+    }()
     
     private let usernameLabel: UILabel = {
         let label = UILabel()
@@ -152,7 +195,8 @@ class FriendCell: UITableViewCell {
     private let noteLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: 14, weight: .regular)
-        label.numberOfLines = 0
+        label.numberOfLines = 1
+        label.textColor = .secondaryLabel
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -167,31 +211,34 @@ class FriendCell: UITableViewCell {
     }
     
     private func setupUI() {
+        contentView.addSubview(avatarImageView)
         contentView.addSubview(usernameLabel)
         contentView.addSubview(regionLabel)
         contentView.addSubview(noteLabel)
         
         NSLayoutConstraint.activate([
-            usernameLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 10),
-            usernameLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 15),
+            avatarImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 15),
+            avatarImageView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            avatarImageView.widthAnchor.constraint(equalToConstant: 50),
+            avatarImageView.heightAnchor.constraint(equalToConstant: 50),
+            
+            usernameLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
+            usernameLabel.leadingAnchor.constraint(equalTo: avatarImageView.trailingAnchor, constant: 12),
             usernameLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -15),
             
-            regionLabel.topAnchor.constraint(equalTo: usernameLabel.bottomAnchor, constant: 5),
-            regionLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 15),
+            regionLabel.topAnchor.constraint(equalTo: usernameLabel.bottomAnchor, constant: 2),
+            regionLabel.leadingAnchor.constraint(equalTo: avatarImageView.trailingAnchor, constant: 12),
             regionLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -15),
             
-            noteLabel.topAnchor.constraint(equalTo: regionLabel.bottomAnchor, constant: 5),
-            noteLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 15),
+            noteLabel.topAnchor.constraint(equalTo: regionLabel.bottomAnchor, constant: 2),
+            noteLabel.leadingAnchor.constraint(equalTo: avatarImageView.trailingAnchor, constant: 12),
             noteLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -15),
-            noteLabel.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -10)
         ])
     }
     
     func configure(with friend: Friend) {
-        // Show nickname if it exists, otherwise show username
         usernameLabel.text = friend.nickname ?? friend.username
         
-        // Show actual username in gray if nickname exists
         if let nickname = friend.nickname, !nickname.isEmpty {
             regionLabel.text = "@\(friend.username) • \(friend.region)"
         } else {
@@ -199,5 +246,23 @@ class FriendCell: UITableViewCell {
         }
         
         noteLabel.text = friend.note.isEmpty ? "No notes" : friend.note
+    }
+    
+    func loadAvatar(urlString: String?) {
+        guard let urlString = urlString else {
+            avatarImageView.image = UIImage(systemName: "person.crop.circle.fill")
+            avatarImageView.tintColor = .systemBlue
+            return
+        }
+        FirebaseService.shared.downloadImage(from: urlString) { [weak self] image in
+            guard let self = self else { return }
+            if let image = image {
+                self.avatarImageView.image = image
+                self.avatarImageView.tintColor = .clear
+            } else {
+                self.avatarImageView.image = UIImage(systemName: "person.crop.circle.fill")
+                self.avatarImageView.tintColor = .systemBlue
+            }
+        }
     }
 }

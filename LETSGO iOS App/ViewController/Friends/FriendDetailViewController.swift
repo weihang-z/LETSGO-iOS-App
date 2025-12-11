@@ -7,12 +7,10 @@ import UIKit
 
 class FriendDetailViewController: UIViewController {
     
-    // MARK: - Properties
     var friend: Friend?
     var friendLog: FriendLog?
     var onNicknameUpdated: (() -> Void)?
     
-    // MARK: - UI Elements
     private let nameLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: 28, weight: .bold)
@@ -104,7 +102,6 @@ class FriendDetailViewController: UIViewController {
         return view
     }()
     
-    // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -112,7 +109,6 @@ class FriendDetailViewController: UIViewController {
         setupConstraints()
         configure()
         
-        // Add edit button for friends (not for friend logs)
         if friend != nil {
             navigationItem.rightBarButtonItem = UIBarButtonItem(
                 title: "Edit Nickname",
@@ -123,7 +119,6 @@ class FriendDetailViewController: UIViewController {
         }
     }
     
-    // MARK: - Setup
     private func setupUI() {
         title = "Friend Details"
         view.backgroundColor = .systemBackground
@@ -186,7 +181,6 @@ class FriendDetailViewController: UIViewController {
     
     private func configure() {
         if let friend = friend {
-            // Show nickname if it exists, otherwise show username
             nameLabel.text = friend.nickname ?? friend.username
             usernameLabel.text = friend.nickname != nil ? "@\(friend.username)" : ""
             usernameLabel.isHidden = friend.nickname == nil
@@ -250,10 +244,8 @@ class FriendDetailViewController: UIViewController {
     private func updateNickname(_ nickname: String?) {
         guard let friend = friend else { return }
         
-        // Update the friend in DataManager
         DataManager.shared.updateFriendNickname(username: friend.username, nickname: nickname)
         
-        // Update local friend reference
         self.friend = Friend(
             username: friend.username,
             region: friend.region,
@@ -263,10 +255,8 @@ class FriendDetailViewController: UIViewController {
             nickname: nickname
         )
         
-        // Update UI
         configure()
         
-        // Notify callback
         onNicknameUpdated?()
     }
 }

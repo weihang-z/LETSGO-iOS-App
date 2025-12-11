@@ -15,7 +15,6 @@ class MainTabBarController: UITabBarController {
     }
     
     func setupTabs() {
-        // Tab 1
         let logsVC = LogTimelineViewController()
         let logsNav = UINavigationController(rootViewController: logsVC)
         logsNav.tabBarItem = UITabBarItem(
@@ -24,7 +23,6 @@ class MainTabBarController: UITabBarController {
             selectedImage: UIImage(systemName: "book.fill")
         )
         
-        // Tab 2
         let friendsVC = FriendLogViewController()
         let friendsNav = UINavigationController(rootViewController: friendsVC)
         friendsNav.tabBarItem = UITabBarItem(
@@ -35,7 +33,6 @@ class MainTabBarController: UITabBarController {
         
         let userContentStore = UserContentDataStore()
 
-        // Tab 3
         let groupDataStore = GroupDataStore()
         let groupsVC = TravelGroupsListViewController(dataStore: groupDataStore, userContentStore: userContentStore)
         let groupsNav = UINavigationController(rootViewController: groupsVC)
@@ -46,7 +43,6 @@ class MainTabBarController: UITabBarController {
             selectedImage: UIImage(systemName: "figure.2.fill")
         )
         
-        // Tab 4
         let profileVC = ProfileOverviewViewController(dataStore: userContentStore)
         let profileNav = UINavigationController(rootViewController: profileVC)
         profileNav.navigationBar.prefersLargeTitles = true

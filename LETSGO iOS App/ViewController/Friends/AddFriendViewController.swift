@@ -7,102 +7,78 @@ import UIKit
 
 class AddFriendViewController: UIViewController {
     
-    private let usernameLabel: UILabel = {
+    private let searchHeaderLabel: UILabel = {
         let label = UILabel()
-        label.text = "Username"
+        label.text = "Search for users by username or email"
         label.font = UIFont.systemFont(ofSize: 16, weight: .medium)
+        label.textColor = .label
+        label.textAlignment = .center
+        label.numberOfLines = 0
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
     
-    private let usernameTextField: UITextField = {
+    private let searchTextField: UITextField = {
         let textField = UITextField()
-        textField.placeholder = "Enter username"
+        textField.placeholder = "Enter username or email"
         textField.borderStyle = .roundedRect
         textField.autocapitalizationType = .none
+        textField.autocorrectionType = .no
+        textField.clearButtonMode = .whileEditing
+        textField.returnKeyType = .search
+        textField.font = UIFont.systemFont(ofSize: 16)
         textField.translatesAutoresizingMaskIntoConstraints = false
         return textField
     }()
     
-    private let regionLabel: UILabel = {
-        let label = UILabel()
-        label.text = "Region"
-        label.font = UIFont.systemFont(ofSize: 16, weight: .medium)
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
-    
-    private let regionTextField: UITextField = {
-        let textField = UITextField()
-        textField.placeholder = "Enter region"
-        textField.borderStyle = .roundedRect
-        textField.translatesAutoresizingMaskIntoConstraints = false
-        return textField
-    }()
-
-    private let emailLabel: UILabel = {
-        let label = UILabel()
-        label.text = "Email"
-        label.font = UIFont.systemFont(ofSize: 16, weight: .medium)
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
-    
-    private let emailTextField: UITextField = {
-        let textField = UITextField()
-        textField.placeholder = "Enter email address"
-        textField.borderStyle = .roundedRect
-        textField.autocapitalizationType = .none
-        textField.keyboardType = .emailAddress
-        textField.translatesAutoresizingMaskIntoConstraints = false
-        return textField
-    }()
-    
-    private let phoneLabel: UILabel = {
-        let label = UILabel()
-        label.text = "Phone Number"
-        label.font = UIFont.systemFont(ofSize: 16, weight: .medium)
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
-    
-    private let phoneTextField: UITextField = {
-        let textField = UITextField()
-        textField.placeholder = "Enter phone number"
-        textField.borderStyle = .roundedRect
-        textField.keyboardType = .phonePad
-        textField.translatesAutoresizingMaskIntoConstraints = false
-        return textField
-    }()
-    
-    private let noteLabel: UILabel = {
-        let label = UILabel()
-        label.text = "Note"
-        label.font = UIFont.systemFont(ofSize: 16, weight: .medium)
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
-    
-    private let noteTextField: UITextField = {
-        let textField = UITextField()
-        textField.placeholder = "Enter note"
-        textField.borderStyle = .roundedRect
-        textField.translatesAutoresizingMaskIntoConstraints = false
-        return textField
-    }()
-    
-    private let saveButton: UIButton = {
+    private let searchButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("Save", for: .normal)
-        button.titleLabel?.font = UIFont.systemFont(ofSize: 18, weight: .semibold)
-        button.backgroundColor = .systemGreen
+        button.setTitle("Search", for: .normal)
+        button.titleLabel?.font = UIFont.systemFont(ofSize: 16, weight: .semibold)
+        button.backgroundColor = .systemBlue
         button.setTitleColor(.white, for: .normal)
         button.layer.cornerRadius = 10
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
     
-    // MARK: - Lifecycle
+    private let searchResultsTableView: UITableView = {
+        let table = UITableView()
+        table.translatesAutoresizingMaskIntoConstraints = false
+        table.register(UITableViewCell.self, forCellReuseIdentifier: "SearchResultCell")
+        table.layer.cornerRadius = 12
+        table.layer.borderWidth = 1
+        table.layer.borderColor = UIColor.systemGray4.cgColor
+        return table
+    }()
+    
+    private let emptyStateLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Search for friends to add them"
+        label.font = UIFont.systemFont(ofSize: 16)
+        label.textColor = .secondaryLabel
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
+    private let activityIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .medium)
+        indicator.hidesWhenStopped = true
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        return indicator
+    }()
+    
+    private var searchResults: [AppUser] = [] {
+        didSet {
+            searchResultsTableView.reloadData()
+            updateEmptyState()
+        }
+    }
+    
+    private var hasSearched = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -110,162 +86,236 @@ class AddFriendViewController: UIViewController {
         setupConstraints()
     }
     
-    // MARK: - Setup
     private func setupUI() {
         title = "Add Friend"
         view.backgroundColor = .systemBackground
         
-        view.addSubview(usernameLabel)
-        view.addSubview(usernameTextField)
-        view.addSubview(regionLabel)
-        view.addSubview(regionTextField)
-        view.addSubview(emailLabel)
-        view.addSubview(emailTextField)
-        view.addSubview(phoneLabel)
-        view.addSubview(phoneTextField)
-        view.addSubview(noteLabel)
-        view.addSubview(noteTextField)
-        view.addSubview(saveButton)
+        view.addSubview(searchHeaderLabel)
+        view.addSubview(searchTextField)
+        view.addSubview(searchButton)
+        view.addSubview(searchResultsTableView)
+        view.addSubview(emptyStateLabel)
+        view.addSubview(activityIndicator)
         
-        saveButton.addTarget(self, action: #selector(saveButtonTapped), for: .touchUpInside)
+        searchButton.addTarget(self, action: #selector(searchButtonTapped), for: .touchUpInside)
+        searchTextField.addTarget(self, action: #selector(textFieldDidChange), for: .editingChanged)
+        searchTextField.delegate = self
+        
+        searchResultsTableView.delegate = self
+        searchResultsTableView.dataSource = self
         
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tapGesture.cancelsTouchesInView = false
         view.addGestureRecognizer(tapGesture)
+        
+        updateEmptyState()
     }
     
     private func setupConstraints() {
         NSLayoutConstraint.activate([
-            usernameLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 30),
-            usernameLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            usernameLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            searchHeaderLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 24),
+            searchHeaderLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            searchHeaderLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             
-            usernameTextField.topAnchor.constraint(equalTo: usernameLabel.bottomAnchor, constant: 10),
-            usernameTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            usernameTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            usernameTextField.heightAnchor.constraint(equalToConstant: 44),
+            searchTextField.topAnchor.constraint(equalTo: searchHeaderLabel.bottomAnchor, constant: 24),
+            searchTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            searchTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            searchTextField.heightAnchor.constraint(equalToConstant: 50),
             
-            regionLabel.topAnchor.constraint(equalTo: usernameTextField.bottomAnchor, constant: 20),
-            regionLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            regionLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            searchButton.topAnchor.constraint(equalTo: searchTextField.bottomAnchor, constant: 16),
+            searchButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            searchButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            searchButton.heightAnchor.constraint(equalToConstant: 50),
             
-            regionTextField.topAnchor.constraint(equalTo: regionLabel.bottomAnchor, constant: 10),
-            regionTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            regionTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            regionTextField.heightAnchor.constraint(equalToConstant: 44),
-
-            emailLabel.topAnchor.constraint(equalTo: regionTextField.bottomAnchor, constant: 20),
-            emailLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            emailLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            searchResultsTableView.topAnchor.constraint(equalTo: searchButton.bottomAnchor, constant: 24),
+            searchResultsTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            searchResultsTableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            searchResultsTableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
             
-            emailTextField.topAnchor.constraint(equalTo: emailLabel.bottomAnchor, constant: 10),
-            emailTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            emailTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            emailTextField.heightAnchor.constraint(equalToConstant: 44),
+            emptyStateLabel.centerXAnchor.constraint(equalTo: searchResultsTableView.centerXAnchor),
+            emptyStateLabel.centerYAnchor.constraint(equalTo: searchResultsTableView.centerYAnchor),
+            emptyStateLabel.leadingAnchor.constraint(equalTo: searchResultsTableView.leadingAnchor, constant: 20),
+            emptyStateLabel.trailingAnchor.constraint(equalTo: searchResultsTableView.trailingAnchor, constant: -20),
             
-            phoneLabel.topAnchor.constraint(equalTo: emailTextField.bottomAnchor, constant: 20),
-            phoneLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            phoneLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            
-            phoneTextField.topAnchor.constraint(equalTo: phoneLabel.bottomAnchor, constant: 10),
-            phoneTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            phoneTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            phoneTextField.heightAnchor.constraint(equalToConstant: 44),
-            
-            noteLabel.topAnchor.constraint(equalTo: phoneTextField.bottomAnchor, constant: 20),
-            noteLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            noteLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            
-            noteTextField.topAnchor.constraint(equalTo: noteLabel.bottomAnchor, constant: 10),
-            noteTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            noteTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            noteTextField.heightAnchor.constraint(equalToConstant: 44),
-            
-            saveButton.topAnchor.constraint(equalTo: noteTextField.bottomAnchor, constant: 40),
-            saveButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            saveButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            saveButton.heightAnchor.constraint(equalToConstant: 50)
+            activityIndicator.centerXAnchor.constraint(equalTo: searchButton.centerXAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: searchButton.centerYAnchor)
         ])
     }
     
-    // MARK: - Actions
+    private func updateEmptyState() {
+        if searchResults.isEmpty {
+            emptyStateLabel.isHidden = false
+            if hasSearched {
+                emptyStateLabel.text = "No users found\nTry searching with a different username or email"
+            } else {
+                emptyStateLabel.text = "Search for friends to add them"
+            }
+        } else {
+            emptyStateLabel.isHidden = true
+        }
+    }
+    
     @objc private func dismissKeyboard() {
         view.endEditing(true)
     }
     
-    @objc private func saveButtonTapped() {
-        let username = trimmedText(from: usernameTextField)
-        guard username.isEmpty == false else {
-            showAlert(message: "Please enter a username")
-            return
-        }
-        
-        let region = trimmedText(from: regionTextField)
-        guard region.isEmpty == false else {
-            showAlert(message: "Please enter a region")
-            return
-        }
-        
-        let email = trimmedText(from: emailTextField)
-        guard email.isEmpty == false else {
-            showAlert(message: "Please enter an email address")
-            return
-        }
-        guard isValidEmail(email) else {
-            showAlert(message: "Please enter a valid email address")
-            return
-        }
-        
-        let phoneNumberRaw = trimmedText(from: phoneTextField)
-        guard phoneNumberRaw.isEmpty == false else {
-            showAlert(message: "Please enter a phone number")
-            return
-        }
-        let digits = digitsOnly(from: phoneNumberRaw)
-        guard digits.count == 10 else {
-            showAlert(message: "Please enter a 10-digit US phone number")
-            return
-        }
-        let formattedPhone = formatPhoneNumber(from: digits)
-        
-        let note = trimmedText(from: noteTextField)
-        guard note.isEmpty == false else {
-            showAlert(message: "Please enter a note")
-            return
-        }
-        
-        let newFriend = Friend(username: username, region: region, email: email, note: note, phoneNumber: formattedPhone, nickname: nil)
-        DataManager.shared.addFriend(newFriend)
-        
-        let alert = UIAlertController(title: "Success", message: "Friend added successfully!", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak self] _ in
-            self?.navigationController?.popViewController(animated: true)
-        })
-        present(alert, animated: true)
+    @objc private func textFieldDidChange() {
+        let hasText = !(searchTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+        searchButton.isEnabled = hasText
+        searchButton.alpha = hasText ? 1.0 : 0.6
     }
     
-    private func trimmedText(from textField: UITextField) -> String {
-        textField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    @objc private func searchButtonTapped() {
+        performSearch()
     }
     
-    private func isValidEmail(_ email: String) -> Bool {
-        let pattern = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}"
-        return NSPredicate(format: "SELF MATCHES %@", pattern).evaluate(with: email)
+    private func performSearch() {
+        guard let query = searchTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !query.isEmpty else {
+            showAlert(message: "Please enter a username or email to search")
+            return
+        }
+        
+        view.endEditing(true)
+        activityIndicator.startAnimating()
+        searchButton.isEnabled = false
+        hasSearched = true
+        
+        FirebaseService.shared.searchUsersByUsernameOrEmail(query: query) { [weak self] result in
+            DispatchQueue.main.async {
+                self?.activityIndicator.stopAnimating()
+                self?.searchButton.isEnabled = true
+                
+                switch result {
+                case .success(let users):
+                    self?.searchResults = users.filter { $0.uid != FirebaseService.shared.currentUserId }
+                    
+                case .failure(let error):
+                    self?.searchResults = []
+                    self?.showAlert(message: "Search failed: \(error.localizedDescription)")
+                }
+            }
+        }
     }
     
-    private func digitsOnly(from string: String) -> String {
-        return string.filter { $0.isNumber }
-    }
-    
-    private func formatPhoneNumber(from digits: String) -> String {
-        let area = digits.prefix(3)
-        let middle = digits.dropFirst(3).prefix(3)
-        let last = digits.suffix(4)
-        return "(\(area)) \(middle)-\(last)"
+    private func addFriendFromSearch(_ user: AppUser) {
+        guard let currentUserId = FirebaseService.shared.currentUserId else {
+            showAlert(message: "Please sign in to add friends")
+            return
+        }
+        
+        activityIndicator.startAnimating()
+        
+        FirebaseService.shared.addFriend(currentUserId: currentUserId, friendId: user.uid) { [weak self] result in
+            DispatchQueue.main.async {
+                self?.activityIndicator.stopAnimating()
+                
+                switch result {
+                case .success:
+                    let alert = UIAlertController(
+                        title: "Success",
+                        message: "\(user.username) added as a friend!",
+                        preferredStyle: .alert
+                    )
+                    alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak self] _ in
+                        self?.navigationController?.popViewController(animated: true)
+                    })
+                    self?.present(alert, animated: true)
+                    
+                case .failure(let error):
+                    self?.showAlert(message: "Failed to add friend: \(error.localizedDescription)")
+                }
+            }
+        }
     }
     
     private func showAlert(message: String) {
-        let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
+        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+}
+
+extension AddFriendViewController: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        performSearch()
+        return true
+    }
+}
+
+extension AddFriendViewController: UITableViewDataSource, UITableViewDelegate {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return searchResults.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "SearchResultCell", for: indexPath)
+        let user = searchResults[indexPath.row]
+        
+        var config = cell.defaultContentConfiguration()
+        config.text = user.username
+        config.secondaryText = user.email
+        
+        config.textProperties.numberOfLines = 1
+        config.textProperties.font = .systemFont(ofSize: 16, weight: .medium)
+        config.secondaryTextProperties.numberOfLines = 0
+        config.secondaryTextProperties.font = .systemFont(ofSize: 14)
+        config.secondaryTextProperties.color = .secondaryLabel
+        
+        config.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12)
+        
+        if let avatarURL = user.avatarURL, !avatarURL.isEmpty {
+            config.image = UIImage(systemName: "person.circle.fill")
+            config.imageProperties.tintColor = .systemBlue
+            config.imageProperties.maximumSize = CGSize(width: 40, height: 40)
+            
+            FirebaseService.shared.downloadImage(from: avatarURL) { image in
+                if let image = image {
+                    DispatchQueue.main.async {
+                        if let currentCell = tableView.cellForRow(at: indexPath) {
+                            var updatedConfig = currentCell.contentConfiguration as? UIListContentConfiguration ?? config
+                            updatedConfig.image = image
+                            updatedConfig.imageProperties.cornerRadius = 20
+                            currentCell.contentConfiguration = updatedConfig
+                        }
+                    }
+                }
+            }
+        } else {
+            config.image = UIImage(systemName: "person.circle.fill")
+            config.imageProperties.tintColor = .systemBlue
+            config.imageProperties.maximumSize = CGSize(width: 40, height: 40)
+        }
+        
+        cell.contentConfiguration = config
+        cell.accessoryType = .disclosureIndicator
+        
+        return cell
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return UITableView.automaticDimension
+    }
+    
+    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 70
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        let user = searchResults[indexPath.row]
+        
+        let alert = UIAlertController(
+            title: "Add Friend",
+            message: "Add \(user.username) as a friend?",
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Add", style: .default) { [weak self] _ in
+            self?.addFriendFromSearch(user)
+        })
+        
         present(alert, animated: true)
     }
 }

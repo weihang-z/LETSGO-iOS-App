@@ -28,6 +28,7 @@ class LogDetailView: UIView {
     var editButton: UIButton!
     var deleteButton: UIButton!
     var photoCollectionHeightConstraint: NSLayoutConstraint!
+    var actionButtonsHeightConstraint: NSLayoutConstraint!
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -280,7 +281,11 @@ class LogDetailView: UIView {
             actionButtonsContainer.leadingAnchor.constraint(equalTo: leadingAnchor),
             actionButtonsContainer.trailingAnchor.constraint(equalTo: trailingAnchor),
             actionButtonsContainer.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor),
-            actionButtonsContainer.heightAnchor.constraint(equalToConstant: 70),
+            {
+                let c = actionButtonsContainer.heightAnchor.constraint(equalToConstant: 70)
+                actionButtonsHeightConstraint = c
+                return c
+            }(),
             
             editButton.leadingAnchor.constraint(equalTo: actionButtonsContainer.leadingAnchor, constant: 16),
             editButton.centerYAnchor.constraint(equalTo: actionButtonsContainer.centerYAnchor),

@@ -77,7 +77,6 @@ extension FollowersListViewController: UITableViewDelegate {
     }
 }
 
-// MARK: - Following (Friends) List
 final class FollowingFriendsViewController: UIViewController {
     private let tableView = UITableView(frame: .zero, style: .insetGrouped)
     private let cellIdentifier = "FollowingFriendCell"
